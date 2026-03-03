@@ -1,0 +1,9 @@
+[
+  {
+    "id": "sample-1",
+    "doc_id": "sample",
+    "question": "What is the document about?",
+    "must_include": ["document"],
+    "must_cite": true
+  }
+]
