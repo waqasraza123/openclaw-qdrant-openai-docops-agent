@@ -1,37 +1,50 @@
 ---
 name: openclaw-docops
+description: Ingest PDFs, ask grounded questions with citations, and run audits against Qdrant-backed docs.
 version: 1.0.0
-description: Ingest PDFs, ask grounded questions with citations, run audits, and manage doc lifecycle in Qdrant.
+metadata:
+  openclaw:
+    requires:
+      bins:
+        - node
+        - npm
+    os:
+      - darwin
+      - linux
 ---
 
-Assumptions
-This file follows the OpenClaw SKILL.md convention used by OpenClaw skill packs. If your OpenClaw version expects different frontmatter keys, adjust accordingly.
+# OpenClaw DocOps
 
-OpenClaw DocOps
-Use this skill to run repo CLI commands that manage document ingestion, Qdrant storage, grounded Q and A, and audit reports.
+Use this skill to ingest a PDF into the DocOps service, ask grounded questions, run audits, and manage doc lifecycle.
 
-Preconditions
-A configured .env exists with OPENAI_API_KEY, QDRANT_URL, QDRANT_API_KEY.
-Dependencies are installed with npm i.
+## Preconditions
 
-Commands
-Ingest a PDF
+The repository is present on disk and dependencies are installed with npm i. A configured .env exists with OPENAI_API_KEY, QDRANT_URL, and QDRANT_API_KEY.
+
+## Ingest a PDF
+
 npm run ingest -- --pdf <pdf_path> --doc-id <doc_id>
 
-Replace existing vectors for the same doc_id
+Replace an existing doc_id
+
 npm run ingest -- --pdf <pdf_path> --doc-id <doc_id> --replace true
 
-Ask a grounded question
+## Ask a question
+
 npm run ask -- --doc-id <doc_id> --q "<question>"
 
-Qdrant connectivity check
-npm run qdrant:check
+Return the JSON output exactly, preserving citations and refusal_reason.
 
-Doc stats
+## Doc stats
+
 npm run doc:stats -- --doc-id <doc_id>
 
-Delete a doc_id safely
+## Delete a doc_id safely
+
 npm run doc:delete -- --doc-id <doc_id> --confirm <doc_id>
 
-Run an audit set
+## Run an audit
+
 npm run audit -- --doc-id <doc_id> --set <eval_set_path>
+
+If tmp/audit-report.md exists, include its summary and provide the file path.

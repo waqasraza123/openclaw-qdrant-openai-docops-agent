@@ -6,8 +6,8 @@ const run = async () => {
   const headers: Record<string, string> = {};
   if (appConfig.QDRANT_API_KEY) headers["api-key"] = appConfig.QDRANT_API_KEY;
 
-  const rootResponse = await fetch(appConfig.QDRANT_URL, { headers: Object.keys(headers).length ? headers : undefined });
-  const rootBodyText = await rootResponse.text();
+  const rootResponse = await fetch(appConfig.QDRANT_URL, { headers });
+  const rootText = await rootResponse.text();
 
   const collections = await qdrantClient.getCollections();
 
@@ -16,7 +16,7 @@ const run = async () => {
       {
         qdrant_url: appConfig.QDRANT_URL,
         root_status: rootResponse.status,
-        root_body: rootBodyText,
+        root_body: rootText,
         collections: collections.collections.map((c) => c.name)
       },
       null,

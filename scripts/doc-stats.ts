@@ -14,9 +14,8 @@ const run = async () => {
 
   if (!docId) throw new Error("Usage: npm run doc:stats -- --doc-id <id>");
 
-  const chunkCount = await countChunksForDocId(docId);
-
-  process.stdout.write(JSON.stringify({ doc_id: docId, chunk_count: chunkCount }, null, 2) + "\n");
+  const count = await countChunksForDocId(docId);
+  process.stdout.write(JSON.stringify({ doc_id: docId, chunk_count: count }, null, 2) + "\n");
 };
 
 run().catch((error) => {

@@ -31,7 +31,7 @@ const run = async () => {
 
   const pdfPath = getArgValue(args, "--pdf");
   const docId = getArgValue(args, "--doc-id");
-  const replaceFlag = getArgValue(args, "--replace");
+  const replace = getArgValue(args, "--replace");
 
   if (!pdfPath || !docId) {
     throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true]");
@@ -44,8 +44,8 @@ const run = async () => {
   const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const contextualLogger = createContextLogger({ op: "ingest", requestId, docId });
 
-  if (replaceFlag === "true") {
-    contextualLogger.info("Replacing existing vectors for doc_id");
+  if (replace === "true") {
+    contextualLogger.info("Replacing existing doc vectors");
     await deleteChunksForDocId(docId);
   }
 
