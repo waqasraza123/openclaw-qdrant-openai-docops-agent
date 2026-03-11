@@ -17,7 +17,8 @@
     "ci": "npm run typecheck && npm test",
     "qdrant:check": "tsx scripts/qdrant-check.ts",
     "doc:stats": "tsx scripts/doc-stats.ts",
-    "doc:delete": "tsx scripts/doc-delete.ts"
+    "doc:delete": "tsx scripts/doc-delete.ts",
+    "chunk:get": "tsx scripts/chunk-get.ts"
   },
   "keywords": [],
   "author": "",
