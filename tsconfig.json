@@ -6,16 +6,13 @@
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "strict": true,
-
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "noImplicitOverride": true,
     "useUnknownInCatchVariables": true,
-
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "verbatimModuleSyntax": true,
-
     "outDir": "dist"
   },
   "include": ["src", "scripts", "tests"],

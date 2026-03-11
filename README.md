@@ -1,47 +1,45 @@
 # OpenClaw DocOps Automation Agent
 
-Production-grade document ingestion + grounded Q&A + audit harness, exposed via:
-- CLI (ingest, ask, audit)
-- HTTP API (automation-ready)
-- OpenClaw skill (chat-native execution)
+Production-grade document ingestion + grounded Q&A + audit harness.
+
+Interfaces:
+- CLI: ingest, ask, audit
+- HTTP API: /v1/ingest, /v1/ask, /v1/audit/run
+- OpenClaw skill integration can be added as a thin wrapper (skills folder)
 
 ## What it does
-- Ingest PDFs → chunk → embed (OpenAI) → store in Qdrant
-- Ask questions → retrieve top chunks → answer with citations (or refusal)
-- Run audits across presets → generate Markdown + JSON reports
-- Emit webhook events for n8n/Make/Zapier
-
-## Tech
-- Node.js + TypeScript
-- OpenAI API (embeddings + responses)
-- Qdrant (vector DB)
-- OpenClaw skill (chat interface)
+- Ingest PDFs -> chunk -> embed (OpenAI) -> store in Qdrant
+- Ask questions -> retrieve chunks -> grounded answer with citations or refusal
+- Audit an eval set -> JSON + Markdown report for reproducible evaluation
 
 ## Requirements
 - Node 20+
-- A running Qdrant instance (Cloud or local)
+- Qdrant Cloud cluster (QDRANT_URL + QDRANT_API_KEY)
 - OpenAI API key
 
 ## Setup
-1) Install:
+1) Install
+npm i
 
-    npm i
+2) Configure env
+cp .env.example .env
 
-2) Configure env:
+3) Ensure Qdrant Cloud is reachable
+Set QDRANT_URL to your cluster endpoint and QDRANT_API_KEY to your key.
 
-    cp .env.example .env
+## Commands
+Ingest:
+npm run ingest -- --pdf ./docs/sample.pdf --doc-id sample
 
-3) Run Qdrant (Cloud or local install) and set QDRANT_URL.
+Ask:
+npm run ask -- --doc-id sample --q "What is this document about?"
 
-## Commands (coming as implementation lands)
+Audit:
+npm run audit -- --doc-id sample --set ./docs/eval/set.example.json
 
-    npm run ingest -- --pdf ./docs/sample.pdf --doc-id sample
-    npm run ask -- --doc-id sample --q "What is this document about?"
-    npm run audit -- --doc-id sample --set ./docs/eval/set.example.json
+Server:
+npm run dev
 
 ## Outputs
-- tmp/audit-report.md
 - tmp/audit-report.json
-
-## Status
-This repo is built as a portfolio-grade reference implementation focused on reliability, cost control, traceability, and automation-ready behavior.
+- tmp/audit-report.md
