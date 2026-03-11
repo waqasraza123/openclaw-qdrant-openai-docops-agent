@@ -14,7 +14,10 @@
     "audit": "tsx scripts/audit.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "ci": "npm run typecheck && npm test"
+    "ci": "npm run typecheck && npm test",
+    "qdrant:check": "tsx scripts/qdrant-check.ts",
+    "doc:stats": "tsx scripts/doc-stats.ts",
+    "doc:delete": "tsx scripts/doc-delete.ts"
   },
   "keywords": [],
   "author": "",

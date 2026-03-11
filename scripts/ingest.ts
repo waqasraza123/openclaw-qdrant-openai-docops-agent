@@ -4,6 +4,7 @@ import path from "node:path";
 import { appConfig } from "../src/config/env.js";
 import { createContextLogger, logger } from "../src/core/logger.js";
 import { emitWebhookEvent } from "../src/core/webhook.js";
+import { deleteChunksForDocId } from "../src/maintenance/documents.js";
 import { createDocumentChunks } from "../src/ingest/chunk.js";
 import { embedChunks } from "../src/ingest/embed.js";
 import { extractPdfText } from "../src/ingest/pdf.js";
@@ -30,9 +31,10 @@ const run = async () => {
 
   const pdfPath = getArgValue(args, "--pdf");
   const docId = getArgValue(args, "--doc-id");
+  const replaceFlag = getArgValue(args, "--replace");
 
   if (!pdfPath || !docId) {
-    throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id>");
+    throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true]");
   }
 
   const resolvedPdfPath = path.resolve(pdfPath);
@@ -41,6 +43,11 @@ const run = async () => {
 
   const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const contextualLogger = createContextLogger({ op: "ingest", requestId, docId });
+
+  if (replaceFlag === "true") {
+    contextualLogger.info("Replacing existing vectors for doc_id");
+    await deleteChunksForDocId(docId);
+  }
 
   const startedAt = Date.now();
   const { text, pageCount } = await extractPdfText(resolvedPdfPath);

@@ -4,7 +4,8 @@ import { appConfig } from "../config/env.js";
 
 export const qdrantClient = new QdrantClient({
   url: appConfig.QDRANT_URL,
-  apiKey: appConfig.QDRANT_API_KEY
+  apiKey: appConfig.QDRANT_API_KEY,
+  timeout: appConfig.REQUEST_TIMEOUT_MS
 });
 
 export const ensureQdrantCollection = async (params: {
@@ -31,6 +32,8 @@ export const ensureQdrantCollection = async (params: {
   }
 
   if (existingSize !== vectorSize) {
-    throw new Error(`Qdrant collection ${collectionName} vector size mismatch: ${existingSize} != ${vectorSize}`);
+    throw new Error(
+      `Qdrant collection ${collectionName} vector size mismatch: ${existingSize} != ${vectorSize}`
+    );
   }
 };
