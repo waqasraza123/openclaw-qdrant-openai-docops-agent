@@ -45,6 +45,18 @@ export const DocExportRequestSchema = z.object({
   page_size: z.coerce.number().int().min(1).max(1024).optional()
 });
 
+export const RegistryGetRequestSchema = z.object({
+  doc_id: DocIdSchema
+});
+
+export const RegistryListRequestSchema = z.object({
+  max_docs: z.coerce.number().int().min(1).max(500000).optional(),
+  page_size: z.coerce.number().int().min(1).max(1024).optional()
+});
+
+export type RegistryGetRequest = z.infer<typeof RegistryGetRequestSchema>;
+export type RegistryListRequest = z.infer<typeof RegistryListRequestSchema>;
+
 export type IngestRequest = z.infer<typeof IngestRequestSchema>;
 export type AskRequest = z.infer<typeof AskRequestSchema>;
 export type AuditRunRequest = z.infer<typeof AuditRunRequestSchema>;

@@ -11,7 +11,9 @@ import { createContextLogger, logger } from "../core/logger.js";
 import { emitWebhookEvent } from "../core/webhook.js";
 import { qdrantClient } from "../core/qdrant.js";
 import { sha256Hex } from "../core/ids.js";
-import { getDocRegistryEntry, upsertDocRegistryEntry } from "../maintenance/docRegistry.js";
+import {
+  getDocRegistryEntry, upsertDocRegistryEntry, listDocRegistryEntries
+} from "../maintenance/docRegistry.js";
 import { getDocRegistryCollectionName } from "../maintenance/registryNaming.js";
 import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../ingest/registry.js";
 import { createDocumentChunks } from "../ingest/chunk.js";
@@ -34,7 +36,9 @@ import {
   DocExportRequestSchema,
   DocStatsRequestSchema,
   DocsListRequestSchema,
-  IngestRequestSchema
+  IngestRequestSchema,
+  RegistryGetRequestSchema,
+  RegistryListRequestSchema
 } from "./schemas.js";
 import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
 
@@ -291,6 +295,30 @@ const handleDocExport = async (body: unknown) => {
   return { doc_id: parsed.doc_id, chunk_count: result.chunks.length, scanned_points: result.scannedPoints, chunks: result.chunks };
 };
 
+const handleRegistryGet = async (body: unknown) => {
+  const parsed = RegistryGetRequestSchema.parse(body);
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  const entry = await getDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
+  if (!entry) return { statusCode: 404, payload: { error: "Doc not found in registry" } };
+  return { statusCode: 200, payload: entry };
+};
+
+const handleRegistryList = async (body: unknown) => {
+  const parsed = RegistryListRequestSchema.parse(body);
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  const maxDocs = parsed.max_docs ?? 1000;
+  const pageSize = parsed.page_size ?? appConfig.QDRANT_BATCH_SIZE;
+  const result = await listDocRegistryEntries({ registryCollectionName, maxDocs, pageSize });
+  return {
+    statusCode: 200,
+    payload: {
+      registry_collection: registryCollectionName,
+      entries: result.entries,
+      scanned_points: result.scannedPoints
+    }
+  };
+};
+
 const server = http.createServer(async (req, res) => {
   const release = await concurrencySemaphore.acquire();
   const requestId = getRequestId(req);
@@ -351,7 +379,17 @@ const server = http.createServer(async (req, res) => {
       return writeJsonResponse(res, 200, result);
     }
 
-    if (url.pathname === "/v1/chunks/get") {
+        if (url.pathname === "/v1/registry/get") {
+      const handled = await handleRegistryGet(body);
+      return writeJsonResponse(res, handled.statusCode, handled.payload);
+    }
+
+    if (url.pathname === "/v1/registry/list") {
+      const handled = await handleRegistryList(body);
+      return writeJsonResponse(res, handled.statusCode, handled.payload);
+    }
+
+if (url.pathname === "/v1/chunks/get") {
       const handled = await handleChunkGet(body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
