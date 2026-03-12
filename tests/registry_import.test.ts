@@ -74,8 +74,8 @@ describe("registry import", () => {
       dependencies: {
         ensureRegistryCollection: async () => undefined,
         upsertEntry: async (entry) => {
-        upserts.push(entry.doc_id);
-      },
+          upserts.push(entry.doc_id);
+        },
         getExistingEntry: async () => null
       },
       skipExisting: false,
@@ -93,12 +93,12 @@ describe("registry import", () => {
       dependencies: {
         ensureRegistryCollection: async () => undefined,
         upsertEntry: async (entry) => {
-        upserts.push(entry.doc_id);
-      },
+          upserts.push(entry.doc_id);
+        },
         getExistingEntry: async (docId) => {
-        const existing = payload.entries.length > 0 ? payload.entries[0] : null;
-        return docId === "d1" && existing ? existing : null;
-      }
+          const existing = payload.entries.length > 0 ? payload.entries[0] : null;
+          return docId === "d1" && existing ? existing : null;
+        }
       },
       skipExisting: true,
       dryRun: false,

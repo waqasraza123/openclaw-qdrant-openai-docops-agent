@@ -9,16 +9,16 @@ export const DocIdSchema = z
 export const ChunkIdSchema = z.string().regex(/^[a-f0-9]{64}$/);
 
 export const IngestRequestSchema = z.object({
-doc_id: DocIdSchema,
+  doc_id: DocIdSchema,
   pdf_path: z.string().min(1),
   replace: z.boolean().optional().default(false),
-  skip_unchanged: z.boolean().optional().default(false),
+  skip_unchanged: z.boolean().optional().default(false)
 });
 
 export const AskRequestSchema = z.object({
-doc_id: DocIdSchema,
+  doc_id: DocIdSchema,
   question: z.string().min(1),
-  trace: z.boolean().optional().default(false),
+  trace: z.boolean().optional().default(false)
 });
 
 export const AuditRunRequestSchema = z.object({

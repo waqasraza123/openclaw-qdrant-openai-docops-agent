@@ -148,11 +148,14 @@ export const upsertDocRegistryEntry = async (params: {
   const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryClient);
 
   if (params.client) {
-    await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName, client: params.client });
+    await ensureDocRegistryCollection({
+      registryCollectionName: params.registryCollectionName,
+      client: params.client
+    });
   } else {
     await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName });
   }
-await client.upsert(params.registryCollectionName, {
+  await client.upsert(params.registryCollectionName, {
     wait: true,
     points: [
       {

@@ -41,8 +41,9 @@ describe("rebuildDocRegistry", () => {
           ]
         }),
         upsertRegistryEntry: async (entry) => {
-        upserts.push(entry);
-      }},
+          upserts.push(entry);
+        }
+      },
       {
         maxScanPoints: 10,
         listPageSize: 2,
