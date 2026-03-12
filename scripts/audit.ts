@@ -1,3 +1,4 @@
+import { appConfig } from "../src/config/env.js";
 import path from "node:path";
 
 import { logger } from "../src/core/logger.js";
@@ -43,7 +44,7 @@ const run = async () => {
     cases.push(judged);
 
     if (!judged.passed && item.must_include.length > 0) {
-      if (process.env.AUDIT_FAIL_FAST === "true") break;
+      if (appConfig.AUDIT_FAIL_FAST) break;
     }
   }
 
