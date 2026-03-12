@@ -15,3 +15,6 @@ Doc delete also deletes registry entry
 
 Redacted config snapshot
 - Adds config print CLI and a config snapshot API endpoint that redacts secrets for safe debugging.
+
+Registry export
+- Adds a CLI to export doc registry entries to a JSON artifact for backup and migrations.
