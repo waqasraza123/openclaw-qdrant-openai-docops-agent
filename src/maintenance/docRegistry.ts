@@ -22,6 +22,28 @@ export type QdrantDocRegistryClient = {
   scroll: (collectionName: string, params: unknown) => Promise<unknown>;
 };
 
+const parseCollectionsList = (collectionsResponse: unknown) => {
+  const record = collectionsResponse as Record<string, unknown> | null;
+  const collections = record ? record["collections"] : undefined;
+  if (!Array.isArray(collections)) return [];
+  return collections as unknown[];
+};
+
+const parseCollectionName = (value: unknown) => {
+  const record = value as Record<string, unknown> | null;
+  const name = record ? record["name"] : undefined;
+  return typeof name === "string" ? name : null;
+};
+
+const parseCollectionVectorSize = (collectionInfo: unknown) => {
+  const root = collectionInfo as Record<string, unknown> | null;
+  const config = root ? (root["config"] as Record<string, unknown> | null) : null;
+  const params = config ? (config["params"] as Record<string, unknown> | null) : null;
+  const vectors = params ? (params["vectors"] as Record<string, unknown> | null) : null;
+  const size = vectors ? vectors["size"] : undefined;
+  return typeof size === "number" ? size : null;
+};
+
 const parsePayloadString = (payload: unknown, key: string) => {
   const record = payload as Record<string, unknown> | null;
   const value = record ? record[key] : undefined;
@@ -70,8 +92,6 @@ const parseRegistryPayload = (payload: unknown): DocRegistryEntry | null => {
 
   if (!doc_id || !source || !content_hash || !embed_model || !created_at || !updated_at) return null;
   if (chunk_count === null || chunk_max_tokens === null || chunk_overlap_tokens === null) return null;
-  if (page_count !== null && page_count < 0) return null;
-  if (chunk_count < 0) return null;
 
   return {
     doc_id,
@@ -99,27 +119,21 @@ export const ensureDocRegistryCollection = async (params: {
   }
 
   const client = params.client;
-  const collections = await client.getCollections();
-  const record = collections as Record<string, unknown> | null;
-  const list = record ? record["collections"] : undefined;
-  const exists =
-    Array.isArray(list) &&
-    list.some((c) => typeof (c as Record<string, unknown> | null)?.["name"] === "string" && (c as any).name === params.registryCollectionName);
+  const collectionsResponse = await client.getCollections();
+  const collectionsList = parseCollectionsList(collectionsResponse);
+  const exists = collectionsList.some((c) => parseCollectionName(c) === params.registryCollectionName);
 
   if (!exists) {
-    await client.createCollection(params.registryCollectionName, { vectors: { size: registryVectorSize, distance: "Cosine" } });
+    await client.createCollection(params.registryCollectionName, {
+      vectors: { size: registryVectorSize, distance: "Cosine" }
+    });
     return;
   }
 
   const info = await client.getCollection(params.registryCollectionName);
-  const infoRecord = info as Record<string, unknown> | null;
-  const config = infoRecord ? (infoRecord["config"] as Record<string, unknown> | null) : null;
-  const paramsRecord = config ? (config["params"] as Record<string, unknown> | null) : null;
-  const vectors = paramsRecord ? (paramsRecord["vectors"] as Record<string, unknown> | null) : null;
-  const sizeValue = vectors ? vectors["size"] : undefined;
-
-  if (typeof sizeValue !== "number" || sizeValue != registryVectorSize) {
-    throw new Error(`Registry collection vector size mismatch: expected ${registryVectorSize}`);
+  const size = parseCollectionVectorSize(info);
+  if (size !== registryVectorSize) {
+    throw new Error(`Registry collection vector size mismatch: ${size ?? "null"} != ${registryVectorSize}`);
   }
 };
 

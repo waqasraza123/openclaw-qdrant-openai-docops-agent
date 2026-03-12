@@ -5,6 +5,10 @@ import { appConfig } from "../src/config/env.js";
 import { createContextLogger, logger } from "../src/core/logger.js";
 import { emitWebhookEvent } from "../src/core/webhook.js";
 import { deleteChunksForDocId } from "../src/maintenance/documents.js";
+import { sha256Hex } from "../src/core/ids.js";
+import { getDocRegistryEntry, upsertDocRegistryEntry } from "../src/maintenance/docRegistry.js";
+import { getDocRegistryCollectionName } from "../src/maintenance/registryNaming.js";
+import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../src/ingest/registry.js";
 import { createDocumentChunks } from "../src/ingest/chunk.js";
 import { embedChunks } from "../src/ingest/embed.js";
 import { extractPdfText } from "../src/ingest/pdf.js";
@@ -76,6 +80,26 @@ const run = async () => {
     vector_size: vectorSize,
     duration_ms: durationMs
   };
+
+  
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  const existingRegistryEntry = await getDocRegistryEntry({ registryCollectionName, docId });
+  const nowIso = new Date().toISOString();
+  const timestamps = resolveRegistryTimestamps({ existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null, nowIso });
+  const contentHash = computeDocumentContentHash(text, (input) => sha256Hex(input));
+  const registryEntry = buildDocRegistryEntry({
+    docId,
+    sourcePath: resolvedPdfPath,
+    pageCount,
+    chunkCount: chunks.length,
+    contentHash,
+    embedModel: appConfig.OPENAI_EMBED_MODEL,
+    chunkMaxTokens: appConfig.CHUNK_MAX_TOKENS,
+    chunkOverlapTokens: appConfig.CHUNK_OVERLAP_TOKENS,
+    createdAtIso: timestamps.createdAtIso,
+    updatedAtIso: timestamps.updatedAtIso
+  });
+  await upsertDocRegistryEntry({ registryCollectionName, entry: registryEntry });
 
   await emitWebhookEvent("ingest.completed", summary);
 

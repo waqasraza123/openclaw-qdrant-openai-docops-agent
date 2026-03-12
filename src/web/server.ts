@@ -9,6 +9,10 @@ import { FixedWindowRateLimiter } from "../core/rateLimit.js";
 import { createContextLogger, logger } from "../core/logger.js";
 import { emitWebhookEvent } from "../core/webhook.js";
 import { qdrantClient } from "../core/qdrant.js";
+import { sha256Hex } from "../core/ids.js";
+import { getDocRegistryEntry, upsertDocRegistryEntry } from "../maintenance/docRegistry.js";
+import { getDocRegistryCollectionName } from "../maintenance/registryNaming.js";
+import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../ingest/registry.js";
 import { createDocumentChunks } from "../ingest/chunk.js";
 import { embedChunks } from "../ingest/embed.js";
 import { extractPdfText } from "../ingest/pdf.js";
@@ -90,7 +94,26 @@ const handleIngest = async (requestId: string, body: unknown) => {
     duration_ms: Date.now() - startedAt
   };
 
-  await emitWebhookEvent("ingest.completed", summary);
+    const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  const existingRegistryEntry = await getDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
+  const nowIso = new Date().toISOString();
+  const timestamps = resolveRegistryTimestamps({ existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null, nowIso });
+  const contentHash = computeDocumentContentHash(text, (input) => sha256Hex(input));
+  const registryEntry = buildDocRegistryEntry({
+    docId: parsed.doc_id,
+    sourcePath: resolvedPdfPath,
+    pageCount,
+    chunkCount: chunks.length,
+    contentHash,
+    embedModel: appConfig.OPENAI_EMBED_MODEL,
+    chunkMaxTokens: appConfig.CHUNK_MAX_TOKENS,
+    chunkOverlapTokens: appConfig.CHUNK_OVERLAP_TOKENS,
+    createdAtIso: timestamps.createdAtIso,
+    updatedAtIso: timestamps.updatedAtIso
+  });
+  await upsertDocRegistryEntry({ registryCollectionName, entry: registryEntry });
+
+await emitWebhookEvent("ingest.completed", summary);
 
   return summary;
 };

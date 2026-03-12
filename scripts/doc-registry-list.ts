@@ -34,7 +34,7 @@ const run = async () => {
 
   process.stdout.write(
     JSON.stringify(
-      { registry_collection: registryCollectionName, doc_ids: result.entries.map((e) => e.doc_id), scanned_points: result.scannedPoints },
+      { registry_collection: registryCollectionName, entries: result.entries, scanned_points: result.scannedPoints },
       null,
       2
     ) + "\n"
