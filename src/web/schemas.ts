@@ -11,7 +11,7 @@ doc_id: DocIdSchema,
 });
 
 export const AskRequestSchema = z.object({
-  doc_id: DocIdSchema,
+doc_id: DocIdSchema,
   question: z.string().min(1)
 });
 

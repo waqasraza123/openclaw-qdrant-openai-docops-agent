@@ -8,15 +8,31 @@ import { validateCitationsMapping } from "./validation.js";
 
 import type { AnswerOutput } from "./schema.js";
 
+type AskTrace = {
+  request_id: string;
+  prompt_input: unknown;
+  retrieved_sources: Array<{
+    sourceId: string;
+    chunkId: string;
+    score: number;
+    text: string;
+    source: string;
+    chunkIndex: number;
+  }>;
+};
+
 export const answerQuestionWithGrounding = async (params: {
   docId: string;
   question: string;
+  requestId?: string;
+  includeTrace?: boolean;
 }): Promise<{
   output: AnswerOutput;
   sources: Array<{ sourceId: string; chunkId: string; score: number }>;
   timings: { retrieval_ms: number; generation_ms: number };
+trace?: AskTrace;
 }> => {
-  const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const requestId = params.requestId ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const contextualLogger = createContextLogger({ op: "ask", requestId, docId: params.docId });
 
   const retrieval = await retrieveSourcesForQuestion({ docId: params.docId, question: params.question });
@@ -36,6 +52,7 @@ export const answerQuestionWithGrounding = async (params: {
 
   const generationStart = Date.now();
   const input = buildGroundedAnswerInput({ question: params.question, sources: retrieval.sources });
+  const trace = params.includeTrace ? { request_id: requestId, prompt_input: input, retrieved_sources: retrieval.sources } : undefined;
   const output = await generateGroundedAnswer(input);
   const generationMs = Date.now() - generationStart;
 
@@ -60,7 +77,8 @@ export const answerQuestionWithGrounding = async (params: {
       return {
         output: refusal,
         sources: retrieval.sources.map((s) => ({ sourceId: s.sourceId, chunkId: s.chunkId, score: s.score })),
-        timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: generationMs }
+        timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: generationMs },
+        trace
       };
     }
   }
@@ -74,6 +92,7 @@ export const answerQuestionWithGrounding = async (params: {
   return {
     output,
     sources: retrieval.sources.map((s) => ({ sourceId: s.sourceId, chunkId: s.chunkId, score: s.score })),
-    timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: generationMs }
+    timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: generationMs },
+    trace
   };
 };

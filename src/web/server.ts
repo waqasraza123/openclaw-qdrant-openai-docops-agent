@@ -3,6 +3,7 @@ import http from "node:http";
 import path from "node:path";
 
 import { answerQuestionWithGrounding } from "../answer/ask.js";
+import { buildAskTraceArtifact, getDefaultTraceDirectory, persistAskTraceArtifact } from "../answer/traceArtifact.js";
 import { appConfig } from "../config/env.js";
 import { AsyncSemaphore } from "../core/semaphore.js";
 import { FixedWindowRateLimiter } from "../core/rateLimit.js";
@@ -164,11 +165,33 @@ const handleAsk = async (requestId: string, body: unknown) => {
   const contextLogger = createContextLogger({ op: "http.ask", requestId, docId: parsed.doc_id });
   contextLogger.info({ questionLength: parsed.question.length }, "Starting ask");
 
-  const result = await answerQuestionWithGrounding({ docId: parsed.doc_id, question: parsed.question });
+  const result = await answerQuestionWithGrounding({ docId: parsed.doc_id, question: parsed.question, requestId, includeTrace: parsed.trace });
+
+  let trace_path: string | null = null;
+
+  if (parsed.trace && result.trace) {
+    const createdAtIso = new Date().toISOString();
+    const artifact = buildAskTraceArtifact({
+      trace: result.trace,
+      docId: parsed.doc_id,
+      question: parsed.question,
+      createdAtIso,
+      model: appConfig.OPENAI_MODEL,
+      embedModel: appConfig.OPENAI_EMBED_MODEL,
+      qdrantCollection: appConfig.QDRANT_COLLECTION,
+      output: result.output,
+      sources: result.sources,
+      timings: result.timings
+    });
+
+    const directoryPath = getDefaultTraceDirectory(appConfig.CACHE_DIR);
+    trace_path = await persistAskTraceArtifact({ artifact, directoryPath });
+  }
+
 
   return {
     statusCode: 200,
-    payload: { doc_id: parsed.doc_id, output: result.output, sources: result.sources, timings: result.timings }
+    payload: { doc_id: parsed.doc_id, output: result.output, sources: result.sources, timings: result.timings, trace_path }
   };
 };
 

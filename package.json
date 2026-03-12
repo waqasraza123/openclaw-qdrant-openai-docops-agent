@@ -24,7 +24,8 @@
     "doc:info": "tsx scripts/doc-info.ts",
     "doc:registry:list": "tsx scripts/doc-registry-list.ts",
     "diagnostics": "tsx scripts/diagnostics.ts",
-    "config:print": "tsx scripts/config-print.ts"
+    "config:print": "tsx scripts/config-print.ts",
+    "ask:trace": "tsx scripts/ask-trace.ts"
   },
   "keywords": [],
   "author": "",
@@ -60,4 +61,4 @@
     "url": "https://github.com/waqasraza123/openclaw-qdrant-openai-docops-agent/issues"
   },
   "homepage": "https://github.com/waqasraza123/openclaw-qdrant-openai-docops-agent#readme"
-}\n
+}
