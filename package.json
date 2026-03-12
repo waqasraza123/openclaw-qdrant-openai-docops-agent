@@ -29,7 +29,8 @@
     "registry:rebuild": "tsx scripts/registry-rebuild.ts",
     "retrieve": "tsx scripts/retrieve.ts",
     "registry:export": "tsx scripts/registry-export.ts",
-    "registry:import": "tsx scripts/registry-import.ts"
+    "registry:import": "tsx scripts/registry-import.ts",
+    "cache:cleanup": "tsx scripts/cache-cleanup.ts"
   },
   "keywords": [],
   "author": "",
@@ -65,4 +66,4 @@
     "url": "https://github.com/waqasraza123/openclaw-qdrant-openai-docops-agent/issues"
   },
   "homepage": "https://github.com/waqasraza123/openclaw-qdrant-openai-docops-agent#readme"
-}
+}\n
