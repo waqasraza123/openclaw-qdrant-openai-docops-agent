@@ -16,6 +16,7 @@ import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimes
 import { createDocumentChunks } from "../ingest/chunk.js";
 import { embedChunks } from "../ingest/embed.js";
 import { extractPdfText } from "../ingest/pdf.js";
+import { evaluateSkipUnchangedIngest } from "../ingest/skipPolicy.js";
 import { upsertEmbeddedChunks } from "../ingest/store.js";
 import { countChunksForDocId, deleteChunksForDocId } from "../maintenance/documents.js";
 import { getChunkForDocIdByChunkId } from "../maintenance/chunks.js";
@@ -76,6 +77,40 @@ const handleIngest = async (requestId: string, body: unknown) => {
 
   const startedAt = Date.now();
   const { text, pageCount } = await extractPdfText(resolvedPdfPath);
+
+  if (parsed.skip_unchanged && !parsed.replace) {
+    const registryCollectionNameForSkip = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+    const existingRegistryEntryForSkip = await getDocRegistryEntry({
+      registryCollectionName: registryCollectionNameForSkip,
+      docId: parsed.doc_id
+    });
+
+    const contentHashForSkip = computeDocumentContentHash(text, (input) => sha256Hex(input));
+
+    const decision = evaluateSkipUnchangedIngest({
+      skipRequested: true,
+      replaceRequested: false,
+      existingEntry: existingRegistryEntryForSkip,
+      contentHash: contentHashForSkip,
+      embedModel: appConfig.OPENAI_EMBED_MODEL,
+      chunkMaxTokens: appConfig.CHUNK_MAX_TOKENS,
+      chunkOverlapTokens: appConfig.CHUNK_OVERLAP_TOKENS
+    });
+
+    if (decision.should_skip) {
+      const summary = {
+        doc_id: parsed.doc_id,
+        pdf_path: resolvedPdfPath,
+        skipped: true,
+        reason: decision.reason,
+        duration_ms: Date.now() - startedAt
+      };
+
+      await emitWebhookEvent("ingest.skipped", summary);
+      return summary;
+    }
+  }
+
   contextLogger.info({ pageCount, extractedChars: text.length }, "Extracted PDF text");
 
   const chunks = createDocumentChunks({ docId: parsed.doc_id, sourcePath: resolvedPdfPath, fullText: text });

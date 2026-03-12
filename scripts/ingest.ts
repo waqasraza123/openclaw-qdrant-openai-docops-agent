@@ -12,6 +12,7 @@ import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimes
 import { createDocumentChunks } from "../src/ingest/chunk.js";
 import { embedChunks } from "../src/ingest/embed.js";
 import { extractPdfText } from "../src/ingest/pdf.js";
+import { evaluateSkipUnchangedIngest } from "../src/ingest/skipPolicy.js";
 import { upsertEmbeddedChunks } from "../src/ingest/store.js";
 
 const getArgValue = (args: string[], flag: string) => {
@@ -36,9 +37,10 @@ const run = async () => {
   const pdfPath = getArgValue(args, "--pdf");
   const docId = getArgValue(args, "--doc-id");
   const replace = getArgValue(args, "--replace");
+  const skipUnchanged = getArgValue(args, "--skip-unchanged");
 
   if (!pdfPath || !docId) {
-    throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true]");
+    throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true] [--skip-unchanged true]");
   }
 
   const resolvedPdfPath = path.resolve(pdfPath);
@@ -55,6 +57,45 @@ const run = async () => {
 
   const startedAt = Date.now();
   const { text, pageCount } = await extractPdfText(resolvedPdfPath);
+
+  const skipRequested = skipUnchanged === "true";
+  const replaceRequested = replace === "true";
+
+  if (skipRequested && !replaceRequested) {
+    const registryCollectionNameForSkip = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+    const existingRegistryEntryForSkip = await getDocRegistryEntry({
+      registryCollectionName: registryCollectionNameForSkip,
+      docId
+    });
+
+    const contentHashForSkip = computeDocumentContentHash(text, (input) => sha256Hex(input));
+
+    const decision = evaluateSkipUnchangedIngest({
+      skipRequested: true,
+      replaceRequested: false,
+      existingEntry: existingRegistryEntryForSkip,
+      contentHash: contentHashForSkip,
+      embedModel: appConfig.OPENAI_EMBED_MODEL,
+      chunkMaxTokens: appConfig.CHUNK_MAX_TOKENS,
+      chunkOverlapTokens: appConfig.CHUNK_OVERLAP_TOKENS
+    });
+
+    if (decision.should_skip) {
+      const summary = {
+        doc_id: docId,
+        pdf_path: resolvedPdfPath,
+        skipped: true,
+        reason: decision.reason,
+        duration_ms: Date.now() - startedAt
+      };
+
+      await emitWebhookEvent("ingest.skipped", summary);
+      contextualLogger.info(summary, "Ingestion skipped");
+      process.stdout.write(JSON.stringify(summary, null, 2) + "\n");
+      return;
+    }
+  }
+
   contextualLogger.info({ pageCount, extractedChars: text.length }, "Extracted PDF text");
 
   const chunks = createDocumentChunks({ docId, sourcePath: resolvedPdfPath, fullText: text });
