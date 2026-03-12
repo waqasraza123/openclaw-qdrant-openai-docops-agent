@@ -28,7 +28,8 @@
     "ask:trace": "tsx scripts/ask-trace.ts",
     "registry:rebuild": "tsx scripts/registry-rebuild.ts",
     "retrieve": "tsx scripts/retrieve.ts",
-    "registry:export": "tsx scripts/registry-export.ts"
+    "registry:export": "tsx scripts/registry-export.ts",
+    "registry:import": "tsx scripts/registry-import.ts"
   },
   "keywords": [],
   "author": "",

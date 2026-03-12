@@ -18,3 +18,6 @@ Redacted config snapshot
 
 Registry export
 - Adds a CLI to export doc registry entries to a JSON artifact for backup and migrations.
+
+Registry import
+- Adds a CLI to import doc registry entries from an export JSON for restore and migration.
