@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 describe("buildConfigSnapshot", () => {
   it("redacts secrets and preserves public config fields", async () => {
     vi.resetModules();
+
     vi.doMock("../src/config/env.js", () => ({
       appConfig: {
         OPENAI_API_KEY: "sk-1234567890",

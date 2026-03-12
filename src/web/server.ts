@@ -5,6 +5,8 @@ import path from "node:path";
 import { answerQuestionWithGrounding } from "../answer/ask.js";
 import { buildAskTraceArtifact, getDefaultTraceDirectory, persistAskTraceArtifact } from "../answer/traceArtifact.js";
 import { appConfig } from "../config/env.js";
+import { buildConfigSnapshot } from "../maintenance/configSnapshot.js";
+
 import { AsyncSemaphore } from "../core/semaphore.js";
 import { FixedWindowRateLimiter } from "../core/rateLimit.js";
 import { createContextLogger, logger } from "../core/logger.js";
@@ -343,7 +345,12 @@ const server = http.createServer(async (req, res) => {
 
     const body = await parseBodyForPost(req);
 
-    if (url.pathname === "/v1/qdrant/check") {
+        if (url.pathname === "/v1/config/snapshot") {
+      const snapshot = buildConfigSnapshot();
+      return writeJsonResponse(res, 200, snapshot);
+    }
+
+if (url.pathname === "/v1/qdrant/check") {
       const result = await handleQdrantCheck();
       return writeJsonResponse(res, 200, result);
     }

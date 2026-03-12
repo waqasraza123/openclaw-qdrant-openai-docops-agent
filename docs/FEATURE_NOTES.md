@@ -12,3 +12,6 @@ Direction check
 
 Doc delete also deletes registry entry
 - When deleting a doc_id, the corresponding registry entry is removed to avoid stale registry reads.
+
+Redacted config snapshot
+- Adds config print CLI and a config snapshot API endpoint that redacts secrets for safe debugging.

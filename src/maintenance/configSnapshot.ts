@@ -63,11 +63,11 @@ export type ConfigSnapshot = {
 };
 
 const buildRedactedSecret = (value: string | undefined): RedactedSecret => {
-  if (!value || value.trim().length === 0) return { is_set: false, preview: "" };
-  const trimmed = value.trim();
-  const prefix = trimmed.slice(0, 3);
-  const suffix = trimmed.slice(-2);
-  const maskedMiddle = "*".repeat(Math.max(0, trimmed.length - (prefix.length + suffix.length)));
+  const raw = typeof value === "string" ? value.trim() : "";
+  if (raw.length === 0) return { is_set: false, preview: "" };
+  const prefix = raw.slice(0, 3);
+  const suffix = raw.slice(-2);
+  const maskedMiddle = "*".repeat(Math.max(0, raw.length - (prefix.length + suffix.length)));
   return { is_set: true, preview: prefix + maskedMiddle + suffix };
 };
 
