@@ -12,7 +12,8 @@ import { emitWebhookEvent } from "../core/webhook.js";
 import { qdrantClient } from "../core/qdrant.js";
 import { sha256Hex } from "../core/ids.js";
 import {
-  getDocRegistryEntry, upsertDocRegistryEntry, listDocRegistryEntries
+  getDocRegistryEntry, upsertDocRegistryEntry, listDocRegistryEntries,
+  deleteDocRegistryEntry
 } from "../maintenance/docRegistry.js";
 import { getDocRegistryCollectionName } from "../maintenance/registryNaming.js";
 import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../ingest/registry.js";
@@ -78,6 +79,9 @@ const handleIngest = async (requestId: string, body: unknown) => {
   if (parsed.replace) {
     contextLogger.info("Replacing existing doc vectors");
     await deleteChunksForDocId(parsed.doc_id);
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  await deleteDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
+
   }
 
   const startedAt = Date.now();
@@ -252,7 +256,7 @@ const handleDocDelete = async (body: unknown) => {
   await deleteChunksForDocId(parsed.doc_id);
   await emitWebhookEvent("doc.deleted", { doc_id: parsed.doc_id });
 
-  return { statusCode: 200, payload: { doc_id: parsed.doc_id, deleted: true } };
+  return { statusCode: 200, payload: { doc_id: parsed.doc_id, deleted: true, registry_deleted: true } };
 };
 
 const handleChunkGet = async (body: unknown) => {

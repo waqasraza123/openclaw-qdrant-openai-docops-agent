@@ -9,3 +9,6 @@ Direction check
 - Consistent with the existing architecture: additive, Qdrant-backed metadata, no behavior changes to ingestion vectors or grounded answering.
 - Not conflicting with existing features: doc stats/delete/chunk get/audit/export still work and remain source-of-truth for chunks.
 - For very large installs, registry can become authoritative for doc listing and can power dashboards and automation triggers.
+
+Doc delete also deletes registry entry
+- When deleting a doc_id, the corresponding registry entry is removed to avoid stale registry reads.

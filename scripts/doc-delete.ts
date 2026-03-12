@@ -1,5 +1,8 @@
+import { appConfig } from "../src/config/env.js";
 import { logger } from "../src/core/logger.js";
+import { deleteDocRegistryEntry } from "../src/maintenance/docRegistry.js";
 import { deleteChunksForDocId } from "../src/maintenance/documents.js";
+import { getDocRegistryCollectionName } from "../src/maintenance/registryNaming.js";
 
 const getArgValue = (args: string[], flag: string) => {
   const index = args.indexOf(flag);
@@ -23,7 +26,10 @@ const run = async () => {
 
   await deleteChunksForDocId(docId);
 
-  process.stdout.write(JSON.stringify({ doc_id: docId, deleted: true }, null, 2) + "\n");
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  await deleteDocRegistryEntry({ registryCollectionName, docId });
+
+  process.stdout.write(JSON.stringify({ doc_id: docId, deleted: true, registry_deleted: true }, null, 2) + "\n");
 };
 
 run().catch((error) => {

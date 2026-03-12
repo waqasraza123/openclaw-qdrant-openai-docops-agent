@@ -229,3 +229,16 @@ export const listDocRegistryEntries = async (params: {
   const entries = Array.from(entryByDocId.values()).sort((a, b) => a.doc_id.localeCompare(b.doc_id));
   return { entries, scannedPoints };
 };
+
+export type QdrantDocRegistryDeleteClient = {
+  delete: (collectionName: string, params: unknown) => Promise<unknown>;
+};
+
+export const deleteDocRegistryEntry = async (params: {
+  registryCollectionName: string;
+  docId: string;
+  client?: QdrantDocRegistryDeleteClient;
+}): Promise<void> => {
+  const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryDeleteClient);
+  await client.delete(params.registryCollectionName, { wait: true, points: [params.docId] });
+};
