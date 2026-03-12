@@ -23,7 +23,8 @@
     "doc:export": "tsx scripts/doc-export.ts",
     "doc:info": "tsx scripts/doc-info.ts",
     "doc:registry:list": "tsx scripts/doc-registry-list.ts",
-    "diagnostics": "tsx scripts/diagnostics.ts"
+    "diagnostics": "tsx scripts/diagnostics.ts",
+    "config:print": "tsx scripts/config-print.ts"
   },
   "keywords": [],
   "author": "",
