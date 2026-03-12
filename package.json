@@ -26,7 +26,8 @@
     "diagnostics": "tsx scripts/diagnostics.ts",
     "config:print": "tsx scripts/config-print.ts",
     "ask:trace": "tsx scripts/ask-trace.ts",
-    "registry:rebuild": "tsx scripts/registry-rebuild.ts"
+    "registry:rebuild": "tsx scripts/registry-rebuild.ts",
+    "retrieve": "tsx scripts/retrieve.ts"
   },
   "keywords": [],
   "author": "",

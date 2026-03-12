@@ -3,6 +3,8 @@ import http from "node:http";
 import path from "node:path";
 
 import { answerQuestionWithGrounding } from "../answer/ask.js";
+import { retrieveSourcesForQuestion } from "../retrieve/search.js";
+import { formatRetrievedSources } from "../retrieve/format.js";
 import { buildAskTraceArtifact, getDefaultTraceDirectory, persistAskTraceArtifact } from "../answer/traceArtifact.js";
 import { appConfig } from "../config/env.js";
 import { buildConfigSnapshot } from "../maintenance/configSnapshot.js";
@@ -43,6 +45,7 @@ import {
   RegistryGetRequestSchema,
   RegistryListRequestSchema
 } from "./schemas.js";
+import { RetrieveRequestSchema } from "./schemas.js";
 import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
 import { formatZodValidationError } from "./validationErrors.js";
 
@@ -326,6 +329,33 @@ const handleRegistryList = async (body: unknown) => {
   };
 };
 
+const handleRetrieve = async (requestId: string, body: unknown) => {
+  const parsed = RetrieveRequestSchema.parse(body);
+
+  const topK = parsed.top_k ?? appConfig.TOP_K;
+  const minScore = parsed.min_score ?? appConfig.MIN_SCORE;
+
+  const retrieved = await retrieveSourcesForQuestion({
+    docId: parsed.doc_id,
+    question: parsed.question,
+    topK,
+    minScore
+  });
+
+  const sources = formatRetrievedSources({ sources: retrieved.sources, includeText: parsed.include_text });
+
+  return {
+    statusCode: 200,
+    payload: {
+      request_id: requestId,
+      doc_id: parsed.doc_id,
+      question: parsed.question,
+      sources,
+      timings: { retrieval_ms: retrieved.retrievalMs }
+    }
+  };
+};
+
 const server = http.createServer(async (req, res) => {
   const release = await concurrencySemaphore.acquire();
   const requestId = getRequestId(req);
@@ -361,7 +391,12 @@ if (url.pathname === "/v1/qdrant/check") {
       return writeJsonResponse(res, 200, result);
     }
 
-    if (url.pathname === "/v1/ask") {
+        if (url.pathname === "/v1/retrieve") {
+      const handled = await handleRetrieve(requestId, body);
+      return writeJsonResponse(res, handled.statusCode, handled.payload);
+    }
+
+if (url.pathname === "/v1/ask") {
       const handled = await handleAsk(requestId, body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }

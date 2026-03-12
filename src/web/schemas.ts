@@ -53,6 +53,16 @@ export const RegistryListRequestSchema = z.object({
   max_docs: z.coerce.number().int().min(1).max(500000).optional(),
   page_size: z.coerce.number().int().min(1).max(1024).optional()
 });
+export const RetrieveRequestSchema = z.object({
+  doc_id: DocIdSchema,
+  question: z.string().min(1),
+  top_k: z.coerce.number().int().min(1).max(100).optional(),
+  min_score: z.coerce.number().min(0).max(1).optional(),
+  include_text: z.boolean().optional().default(false)
+});
+
+export type RetrieveRequest = z.infer<typeof RetrieveRequestSchema>;
+
 
 export type RegistryGetRequest = z.infer<typeof RegistryGetRequestSchema>;
 export type RegistryListRequest = z.infer<typeof RegistryListRequestSchema>;
