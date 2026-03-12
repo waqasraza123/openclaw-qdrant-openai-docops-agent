@@ -21,3 +21,6 @@ Registry export
 
 Registry import
 - Adds a CLI to import doc registry entries from an export JSON for restore and migration.\n\nCache cleanup\n- Adds a TTL-based cache cleanup CLI with safety checks and JSON reporting.\n
+
+Diagnostics API
+- Adds POST /v1/diagnostics/run with optional OpenAI probe and 503 on failed included checks.

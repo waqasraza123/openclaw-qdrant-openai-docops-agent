@@ -14,6 +14,8 @@ import { FixedWindowRateLimiter } from "../core/rateLimit.js";
 import { createContextLogger, logger } from "../core/logger.js";
 import { emitWebhookEvent } from "../core/webhook.js";
 import { qdrantClient } from "../core/qdrant.js";
+import { createEmbeddingVectors } from "../core/openai.js";
+import { runDiagnostics } from "../maintenance/diagnostics.js";
 import { sha256Hex } from "../core/ids.js";
 import {
   getDocRegistryEntry, upsertDocRegistryEntry, listDocRegistryEntries,
@@ -43,7 +45,8 @@ import {
   DocsListRequestSchema,
   IngestRequestSchema,
   RegistryGetRequestSchema,
-  RegistryListRequestSchema
+  RegistryListRequestSchema,
+  DiagnosticsRunRequestSchema
 } from "./schemas.js";
 import { RetrieveRequestSchema } from "./schemas.js";
 import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
@@ -356,6 +359,36 @@ const handleRetrieve = async (requestId: string, body: unknown) => {
   };
 };
 
+const handleDiagnosticsRun = async (body: unknown) => {
+  const parsed = DiagnosticsRunRequestSchema.parse(body);
+
+  const measureMs = async <T>(operation: () => Promise<T>) => {
+    const startedAt = Date.now();
+    const result = await operation();
+    const elapsedMs = Date.now() - startedAt;
+    return { result, elapsedMs };
+  };
+
+  const startedAtIso = new Date().toISOString();
+
+  const diagnostics = await runDiagnostics({
+    startedAtIso,
+    nowIso: () => new Date().toISOString(),
+    measureMs,
+    getQdrantCollections: async () => await qdrantClient.getCollections(),
+    createEmbeddings: async (inputs: string[]) => {
+      const { vectors } = await createEmbeddingVectors(inputs);
+      return { vectors };
+    },
+    embedModel: appConfig.OPENAI_EMBED_MODEL,
+    probeText: "diagnostics ping",
+    includeOpenAi: parsed.include_openai
+  });
+
+  const statusCode = diagnostics.ok ? 200 : 503;
+  return { statusCode, payload: diagnostics };
+};
+
 const server = http.createServer(async (req, res) => {
   const release = await concurrencySemaphore.acquire();
   const requestId = getRequestId(req);
@@ -393,6 +426,11 @@ if (url.pathname === "/v1/qdrant/check") {
 
         if (url.pathname === "/v1/retrieve") {
       const handled = await handleRetrieve(requestId, body);
+      return writeJsonResponse(res, handled.statusCode, handled.payload);
+    }
+
+    if (url.pathname === "/v1/diagnostics/run") {
+      const handled = await handleDiagnosticsRun(body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
 

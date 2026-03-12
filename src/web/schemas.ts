@@ -60,6 +60,12 @@ export const RetrieveRequestSchema = z.object({
   min_score: z.coerce.number().min(0).max(1).optional(),
   include_text: z.boolean().optional().default(false)
 });
+export const DiagnosticsRunRequestSchema = z.object({
+  include_openai: z.boolean().optional().default(false)
+});
+
+export type DiagnosticsRunRequest = z.infer<typeof DiagnosticsRunRequestSchema>;
+
 
 export type RetrieveRequest = z.infer<typeof RetrieveRequestSchema>;
 

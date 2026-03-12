@@ -9,6 +9,7 @@ export type DiagnosticsResult = {
     error: string | null;
   };
   openai_embeddings: {
+    included: boolean;
     ok: boolean;
     latency_ms: number;
     model: string;
@@ -25,6 +26,7 @@ export type DiagnosticsDependencies = {
   createEmbeddings: (inputs: string[]) => Promise<{ vectors: number[][] }>;
   embedModel: string;
   probeText: string;
+  includeOpenAi: boolean;
 };
 
 const stringifyError = (error: unknown) => {
@@ -69,7 +71,14 @@ const validateEmbeddingsResponse = (vectors: number[][]) => {
 
 export const runDiagnostics = async (deps: DiagnosticsDependencies): Promise<DiagnosticsResult> => {
   const qdrantBase = { ok: false, latency_ms: 0, collections: [] as string[], error: null as string | null };
-  const openaiBase = { ok: false, latency_ms: 0, model: deps.embedModel, vector_size: null as number | null, error: null as string | null };
+  const openaiBase = {
+    included: deps.includeOpenAi,
+    ok: false,
+    latency_ms: 0,
+    model: deps.embedModel,
+    vector_size: null as number | null,
+    error: null as string | null
+  };
 
   let qdrant = qdrantBase;
   try {
@@ -85,18 +94,23 @@ export const runDiagnostics = async (deps: DiagnosticsDependencies): Promise<Dia
   }
 
   let openai = openaiBase;
-  try {
-    const measured = await deps.measureMs(async () => await deps.createEmbeddings([deps.probeText]));
-    const vectorSize = validateEmbeddingsResponse(measured.result.vectors);
-    openai = {
-      ok: true,
-      latency_ms: measured.elapsedMs,
-      model: deps.embedModel,
-      vector_size: vectorSize,
-      error: null
-    };
-  } catch (error) {
-    openai = { ...openaiBase, ok: false, error: stringifyError(error) };
+  if (!deps.includeOpenAi) {
+    openai = { ...openaiBase, included: false, ok: true, latency_ms: 0, vector_size: null, error: null };
+  } else {
+    try {
+      const measured = await deps.measureMs(async () => await deps.createEmbeddings([deps.probeText]));
+      const vectorSize = validateEmbeddingsResponse(measured.result.vectors);
+      openai = {
+        included: true,
+        ok: true,
+        latency_ms: measured.elapsedMs,
+        model: deps.embedModel,
+        vector_size: vectorSize,
+        error: null
+      };
+    } catch (error) {
+      openai = { ...openaiBase, included: true, ok: false, error: stringifyError(error) };
+    }
   }
 
   const finishedAtIso = deps.nowIso();

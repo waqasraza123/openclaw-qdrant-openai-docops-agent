@@ -14,17 +14,41 @@ describe("runDiagnostics", () => {
       getQdrantCollections: async () => ({ collections: [{ name: "a" }, { name: "b" }] }),
       createEmbeddings: async () => ({ vectors: [[0.1, 0.2, 0.3]] }),
       embedModel: "text-embedding-3-small",
-      probeText: "ping"
+      probeText: "ping",
+      includeOpenAi: true
     });
 
     expect(diagnostics.ok).toBe(true);
     expect(diagnostics.qdrant.ok).toBe(true);
     expect(diagnostics.qdrant.collections).toEqual(["a", "b"]);
+    expect(diagnostics.openai_embeddings.included).toBe(true);
     expect(diagnostics.openai_embeddings.ok).toBe(true);
     expect(diagnostics.openai_embeddings.vector_size).toBe(3);
   });
 
-  it("returns ok false and errors when dependencies fail", async () => {
+  it("skips openai when includeOpenAi is false", async () => {
+    const diagnostics = await runDiagnostics({
+      startedAtIso: "t0",
+      nowIso: () => "t1",
+      measureMs: async <T,>(operation: () => Promise<T>) => {
+        const result = await operation();
+        return { result, elapsedMs: 2 };
+      },
+      getQdrantCollections: async () => ({ collections: [{ name: "a" }] }),
+      createEmbeddings: async () => {
+        throw new Error("should not be called");
+      },
+      embedModel: "text-embedding-3-small",
+      probeText: "ping",
+      includeOpenAi: false
+    });
+
+    expect(diagnostics.ok).toBe(true);
+    expect(diagnostics.openai_embeddings.included).toBe(false);
+    expect(diagnostics.openai_embeddings.ok).toBe(true);
+  });
+
+  it("returns ok false and errors when included dependencies fail", async () => {
     const diagnostics = await runDiagnostics({
       startedAtIso: "t0",
       nowIso: () => "t1",
@@ -39,12 +63,14 @@ describe("runDiagnostics", () => {
         throw new Error("openai down");
       },
       embedModel: "text-embedding-3-small",
-      probeText: "ping"
+      probeText: "ping",
+      includeOpenAi: true
     });
 
     expect(diagnostics.ok).toBe(false);
     expect(diagnostics.qdrant.ok).toBe(false);
     expect(diagnostics.qdrant.error).toBe("qdrant down");
+    expect(diagnostics.openai_embeddings.included).toBe(true);
     expect(diagnostics.openai_embeddings.ok).toBe(false);
     expect(diagnostics.openai_embeddings.error).toBe("openai down");
   });

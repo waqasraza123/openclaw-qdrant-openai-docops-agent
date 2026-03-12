@@ -24,10 +24,12 @@ const run = async () => {
       return { vectors };
     },
     embedModel: appConfig.OPENAI_EMBED_MODEL,
-    probeText: "diagnostics ping"
+    probeText: "diagnostics ping",
+    includeOpenAi: true
   });
 
-  process.stdout.write(JSON.stringify(diagnostics, null, 2) + "\n");
+  process.stdout.write(JSON.stringify(diagnostics, null, 2) + "
+");
 
   if (!diagnostics.ok) process.exitCode = 1;
 };
