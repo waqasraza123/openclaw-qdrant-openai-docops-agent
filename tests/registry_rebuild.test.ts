@@ -20,13 +20,37 @@ describe("rebuildDocRegistry", () => {
         exportChunks: async () => ({
           scannedPoints: 3,
           chunks: [
-            { doc_id: "d1", chunk_id: "c2", chunk_index: 2, token_count: 1, source: "a.pdf", text: "x", created_at: "t" },
-            { doc_id: "d1", chunk_id: "c1", chunk_index: 1, token_count: 1, source: "a.pdf", text: "y", created_at: "t" }
+            {
+              doc_id: "d1",
+              chunk_id: "c2",
+              chunk_index: 2,
+              token_count: 1,
+              source: "a.pdf",
+              text: "x",
+              created_at: "t"
+            },
+            {
+              doc_id: "d1",
+              chunk_id: "c1",
+              chunk_index: 1,
+              token_count: 1,
+              source: "a.pdf",
+              text: "y",
+              created_at: "t"
+            }
           ]
         }),
-        upsertRegistryEntry: async (entry) => upserts.push(entry)
-      },
-      { maxScanPoints: 10, listPageSize: 2, maxDocs: 10, maxChunksPerDoc: 10, chunksPageSize: 2, dryRun: false }
+        upsertRegistryEntry: async (entry) => {
+        upserts.push(entry);
+      }},
+      {
+        maxScanPoints: 10,
+        listPageSize: 2,
+        maxDocs: 10,
+        maxChunksPerDoc: 10,
+        chunksPageSize: 2,
+        dryRun: false
+      }
     );
 
     expect(report.ok).toBe(true);
@@ -51,12 +75,20 @@ describe("rebuildDocRegistry", () => {
         exportChunks: async () => ({ scannedPoints: 0, chunks: [] }),
         upsertRegistryEntry: async () => undefined
       },
-      { maxScanPoints: 10, listPageSize: 2, maxDocs: 10, maxChunksPerDoc: 10, chunksPageSize: 2, dryRun: false }
+      {
+        maxScanPoints: 10,
+        listPageSize: 2,
+        maxDocs: 10,
+        maxChunksPerDoc: 10,
+        chunksPageSize: 2,
+        dryRun: false
+      }
     );
 
     expect(report.docs_updated).toBe(0);
     expect(report.docs_skipped).toBe(1);
-    expect(report.results[0].skipped_reason).toBe("No chunks found for doc_id");
+    expect(report.results.length).toBe(1);
+    expect(report.results[0]!.skipped_reason).toBe("No chunks found for doc_id");
   });
 
   it("supports dry run without upserts", async () => {
@@ -75,13 +107,30 @@ describe("rebuildDocRegistry", () => {
         listDocIds: async () => ({ docIds: ["d1"], scannedPoints: 1 }),
         exportChunks: async () => ({
           scannedPoints: 1,
-          chunks: [{ doc_id: "d1", chunk_id: "c1", chunk_index: 1, token_count: 1, source: "a.pdf", text: "x", created_at: "t" }]
+          chunks: [
+            {
+              doc_id: "d1",
+              chunk_id: "c1",
+              chunk_index: 1,
+              token_count: 1,
+              source: "a.pdf",
+              text: "x",
+              created_at: "t"
+            }
+          ]
         }),
         upsertRegistryEntry: async () => {
           upsertCalled = true;
         }
       },
-      { maxScanPoints: 10, listPageSize: 2, maxDocs: 10, maxChunksPerDoc: 10, chunksPageSize: 2, dryRun: true }
+      {
+        maxScanPoints: 10,
+        listPageSize: 2,
+        maxDocs: 10,
+        maxChunksPerDoc: 10,
+        chunksPageSize: 2,
+        dryRun: true
+      }
     );
 
     expect(report.docs_updated).toBe(1);

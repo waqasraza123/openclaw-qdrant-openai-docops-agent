@@ -29,7 +29,9 @@ const run = async () => {
   const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
   await deleteDocRegistryEntry({ registryCollectionName, docId });
 
-  process.stdout.write(JSON.stringify({ doc_id: docId, deleted: true, registry_deleted: true }, null, 2) + "\n");
+  process.stdout.write(
+    JSON.stringify({ doc_id: docId, deleted: true, registry_deleted: true }, null, 2) + "\n"
+  );
 };
 
 run().catch((error) => {

@@ -33,10 +33,16 @@ const run = async () => {
   const dryRun = parseBoolean(getArgValue(args, "--dry-run"));
 
   const resolvedMaxScanPoints = maxScanPoints ? parsePositiveInt(maxScanPoints, "max-scan-points") : 200000;
-  const resolvedListPageSize = listPageSize ? parsePositiveInt(listPageSize, "list-page-size") : appConfig.QDRANT_BATCH_SIZE;
+  const resolvedListPageSize = listPageSize
+    ? parsePositiveInt(listPageSize, "list-page-size")
+    : appConfig.QDRANT_BATCH_SIZE;
   const resolvedMaxDocs = maxDocs ? parsePositiveInt(maxDocs, "max-docs") : 1000;
-  const resolvedMaxChunksPerDoc = maxChunksPerDoc ? parsePositiveInt(maxChunksPerDoc, "max-chunks") : appConfig.MAX_CHUNKS_PER_DOC;
-  const resolvedChunksPageSize = chunksPageSize ? parsePositiveInt(chunksPageSize, "chunks-page-size") : appConfig.QDRANT_BATCH_SIZE;
+  const resolvedMaxChunksPerDoc = maxChunksPerDoc
+    ? parsePositiveInt(maxChunksPerDoc, "max-chunks")
+    : appConfig.MAX_CHUNKS_PER_DOC;
+  const resolvedChunksPageSize = chunksPageSize
+    ? parsePositiveInt(chunksPageSize, "chunks-page-size")
+    : appConfig.QDRANT_BATCH_SIZE;
 
   const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
 

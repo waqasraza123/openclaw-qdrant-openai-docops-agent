@@ -34,7 +34,11 @@ export const getChunkForDocIdByChunkId = async (
   const client = options?.client ?? (qdrantClient as unknown as QdrantChunksClient);
   const collectionName = options?.collectionName ?? appConfig.QDRANT_COLLECTION;
 
-  const points = await client.retrieve(collectionName, { ids: [params.chunkId], with_payload: true, with_vector: false });
+  const points = await client.retrieve(collectionName, {
+    ids: [params.chunkId],
+    with_payload: true,
+    with_vector: false
+  });
 
   if (!Array.isArray(points) || points.length === 0) return null;
 

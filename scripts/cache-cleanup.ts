@@ -31,8 +31,13 @@ const run = async () => {
   const args = process.argv.slice(2);
 
   const dryRun = parseBoolean(getArgValue(args, "--dry-run"), "dry-run");
-  const ttlSeconds = parseOptionalPositiveInt(getArgValue(args, "--ttl-seconds"), "ttl-seconds") ?? appConfig.CACHE_TTL_SECONDS;
-  const maxDeleteCount = parseOptionalPositiveInt(getArgValue(args, "--max-delete-count"), "max-delete-count");
+  const ttlSeconds =
+    parseOptionalPositiveInt(getArgValue(args, "--ttl-seconds"), "ttl-seconds") ??
+    appConfig.CACHE_TTL_SECONDS;
+  const maxDeleteCount = parseOptionalPositiveInt(
+    getArgValue(args, "--max-delete-count"),
+    "max-delete-count"
+  );
   const maxDeleteMb = parseOptionalPositiveInt(getArgValue(args, "--max-delete-mb"), "max-delete-mb");
 
   const maxDeleteBytes = maxDeleteMb === null ? null : maxDeleteMb * 1024 * 1024;

@@ -1,7 +1,11 @@
 import { appConfig } from "../src/config/env.js";
 import { logger } from "../src/core/logger.js";
 import { answerQuestionWithGrounding } from "../src/answer/ask.js";
-import { buildAskTraceArtifact, getDefaultTraceDirectory, persistAskTraceArtifact } from "../src/answer/traceArtifact.js";
+import {
+  buildAskTraceArtifact,
+  getDefaultTraceDirectory,
+  persistAskTraceArtifact
+} from "../src/answer/traceArtifact.js";
 
 const getArgValue = (args: string[], flag: string) => {
   const index = args.indexOf(flag);
@@ -47,7 +51,13 @@ const run = async () => {
 
   process.stdout.write(
     JSON.stringify(
-      { doc_id: docId, output: result.output, sources: result.sources, timings: result.timings, trace_path: tracePath },
+      {
+        doc_id: docId,
+        output: result.output,
+        sources: result.sources,
+        timings: result.timings,
+        trace_path: tracePath
+      },
       null,
       2
     ) + "\n"

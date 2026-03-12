@@ -1,6 +1,7 @@
 Cursor Prompt
 
 We are adding a Qdrant-backed doc registry collection to store one record per doc_id for scalable doc listing and doc info. Please review these files:
+
 - src/maintenance/docRegistry.ts
 - scripts/ingest.ts
 - scripts/doc-info.ts

@@ -8,7 +8,11 @@ import { deleteChunksForDocId } from "../src/maintenance/documents.js";
 import { sha256Hex } from "../src/core/ids.js";
 import { getDocRegistryEntry, upsertDocRegistryEntry } from "../src/maintenance/docRegistry.js";
 import { getDocRegistryCollectionName } from "../src/maintenance/registryNaming.js";
-import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../src/ingest/registry.js";
+import {
+  buildDocRegistryEntry,
+  computeDocumentContentHash,
+  resolveRegistryTimestamps
+} from "../src/ingest/registry.js";
 import { createDocumentChunks } from "../src/ingest/chunk.js";
 import { embedChunks } from "../src/ingest/embed.js";
 import { extractPdfText } from "../src/ingest/pdf.js";
@@ -40,7 +44,9 @@ const run = async () => {
   const skipUnchanged = getArgValue(args, "--skip-unchanged");
 
   if (!pdfPath || !docId) {
-    throw new Error("Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true] [--skip-unchanged true]");
+    throw new Error(
+      "Usage: npm run ingest -- --pdf <path> --doc-id <id> [--replace true] [--skip-unchanged true]"
+    );
   }
 
   const resolvedPdfPath = path.resolve(pdfPath);
@@ -122,11 +128,13 @@ const run = async () => {
     duration_ms: durationMs
   };
 
-  
   const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
   const existingRegistryEntry = await getDocRegistryEntry({ registryCollectionName, docId });
   const nowIso = new Date().toISOString();
-  const timestamps = resolveRegistryTimestamps({ existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null, nowIso });
+  const timestamps = resolveRegistryTimestamps({
+    existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null,
+    nowIso
+  });
   const contentHash = computeDocumentContentHash(text, (input) => sha256Hex(input));
   const registryEntry = buildDocRegistryEntry({
     docId,

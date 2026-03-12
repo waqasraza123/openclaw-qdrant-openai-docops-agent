@@ -68,10 +68,13 @@ export const retrieveSourcesForQuestion = async (params: {
       return { chunkId, score, text, source, chunkIndex };
     })
     .filter(
-      (x): x is { chunkId: string; score: number; text: string; source: string; chunkIndex: number } => x !== null
+      (x): x is { chunkId: string; score: number; text: string; source: string; chunkIndex: number } =>
+        x !== null
     );
 
-  const ordered = appConfig.RE_RANK ? rerankSourcesDeterministically({ question: params.question, sources: mapped }) : mapped;
+  const ordered = appConfig.RE_RANK
+    ? rerankSourcesDeterministically({ question: params.question, sources: mapped })
+    : mapped;
 
   return { sources: assignSourceIds(ordered), retrievalMs: Date.now() - startedAt };
 };

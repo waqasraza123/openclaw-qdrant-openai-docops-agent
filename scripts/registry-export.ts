@@ -1,7 +1,11 @@
 import { appConfig } from "../src/config/env.js";
 import { logger } from "../src/core/logger.js";
 import { listDocRegistryEntries } from "../src/maintenance/docRegistry.js";
-import { buildRegistryExportPayload, persistRegistryExportPayload, resolveDefaultRegistryExportPath } from "../src/maintenance/registryExport.js";
+import {
+  buildRegistryExportPayload,
+  persistRegistryExportPayload,
+  resolveDefaultRegistryExportPath
+} from "../src/maintenance/registryExport.js";
 import { getDocRegistryCollectionName } from "../src/maintenance/registryNaming.js";
 
 const getArgValue = (args: string[], flag: string) => {
@@ -43,7 +47,12 @@ const run = async () => {
 
   process.stdout.write(
     JSON.stringify(
-      { ok: true, out_path: resolved, registry_collection: registryCollectionName, entry_count: payload.entry_count },
+      {
+        ok: true,
+        out_path: resolved,
+        registry_collection: registryCollectionName,
+        entry_count: payload.entry_count
+      },
       null,
       2
     ) + "\n"

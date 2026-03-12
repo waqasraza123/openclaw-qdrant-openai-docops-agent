@@ -1,18 +1,24 @@
 import { z } from "zod";
 
-export const DocIdSchema = z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/);
+export const DocIdSchema = z
+  .string()
+  .min(1)
+  .max(64)
+  .regex(/^[a-zA-Z0-9_-]+$/);
 
 export const ChunkIdSchema = z.string().regex(/^[a-f0-9]{64}$/);
 
 export const IngestRequestSchema = z.object({
 doc_id: DocIdSchema,
   pdf_path: z.string().min(1),
-  replace: z.boolean().optional().default(false),
+  replace: z.boolean().optional().default(false)
+  skip_unchanged: z.boolean().optional().default(false),
 });
 
 export const AskRequestSchema = z.object({
 doc_id: DocIdSchema,
   question: z.string().min(1)
+  trace: z.boolean().optional().default(false),
 });
 
 export const AuditRunRequestSchema = z.object({
@@ -66,9 +72,7 @@ export const DiagnosticsRunRequestSchema = z.object({
 
 export type DiagnosticsRunRequest = z.infer<typeof DiagnosticsRunRequestSchema>;
 
-
 export type RetrieveRequest = z.infer<typeof RetrieveRequestSchema>;
-
 
 export type RegistryGetRequest = z.infer<typeof RegistryGetRequestSchema>;
 export type RegistryListRequest = z.infer<typeof RegistryListRequestSchema>;

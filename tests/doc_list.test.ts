@@ -14,19 +14,13 @@ describe("listDocIdsInCollection", () => {
 
         if (!offset) {
           return {
-            points: [
-              { payload: { doc_id: "b" } },
-              { payload: { doc_id: "a" } }
-            ],
+            points: [{ payload: { doc_id: "b" } }, { payload: { doc_id: "a" } }],
             next_page_offset: "p2"
           };
         }
 
         return {
-          points: [
-            { payload: { doc_id: "a" } },
-            { payload: { doc_id: "c" } }
-          ],
+          points: [{ payload: { doc_id: "a" } }, { payload: { doc_id: "c" } }],
           next_page_offset: null
         };
       }
@@ -47,11 +41,7 @@ describe("listDocIdsInCollection", () => {
   it("respects maxPointsToScan by limiting processed points", async () => {
     const fakeClient = {
       scroll: async (_collectionName: string, _params: unknown) => ({
-        points: [
-          { payload: { doc_id: "a" } },
-          { payload: { doc_id: "b" } },
-          { payload: { doc_id: "c" } }
-        ],
+        points: [{ payload: { doc_id: "a" } }, { payload: { doc_id: "b" } }, { payload: { doc_id: "c" } }],
         next_page_offset: "p2"
       })
     };

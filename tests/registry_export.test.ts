@@ -4,7 +4,11 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { buildRegistryExportPayload, persistRegistryExportPayload, resolveDefaultRegistryExportPath } from "../src/maintenance/registryExport.js";
+import {
+  buildRegistryExportPayload,
+  persistRegistryExportPayload,
+  resolveDefaultRegistryExportPath
+} from "../src/maintenance/registryExport.js";
 
 describe("registry export", () => {
   it("builds payload with sorted entries and counts", () => {

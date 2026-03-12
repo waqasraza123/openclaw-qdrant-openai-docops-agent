@@ -16,12 +16,16 @@ describe("formatRetrievedSources", () => {
 
   it("omits text when includeText is false", () => {
     const formatted = formatRetrievedSources({ sources: sources as any, includeText: false });
-    expect(formatted[0].source_id).toBe("S1");
-    expect("text" in formatted[0]).toBe(false);
+    expect(formatted.length).toBe(1);
+    const first = formatted[0]!;
+    expect(first.source_id).toBe("S1");
+    expect("text" in first).toBe(false);
   });
 
   it("includes text when includeText is true", () => {
     const formatted = formatRetrievedSources({ sources: sources as any, includeText: true });
-    expect(formatted[0].text).toBe("t");
+    expect(formatted.length).toBe(1);
+    const first = formatted[0]!;
+    expect(first.text).toBe("t");
   });
 });

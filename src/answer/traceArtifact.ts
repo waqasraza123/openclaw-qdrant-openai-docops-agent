@@ -29,11 +29,9 @@ export type AskTraceArtifact = {
   timings: { retrieval_ms: number; generation_ms: number };
 };
 
-export const sanitizeTraceId = (traceId: string) =>
-  traceId.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
+export const sanitizeTraceId = (traceId: string) => traceId.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 120);
 
-export const getDefaultTraceDirectory = (cacheDir: string) =>
-  path.join(path.dirname(cacheDir), "traces");
+export const getDefaultTraceDirectory = (cacheDir: string) => path.join(path.dirname(cacheDir), "traces");
 
 export const buildAskTraceArtifact = (params: {
   trace: AskTracePayload;

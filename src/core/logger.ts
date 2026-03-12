@@ -2,13 +2,12 @@ import pino from "pino";
 
 import { appConfig } from "../config/env.js";
 
-const transport =
-  appConfig.LOG_JSON
-    ? undefined
-    : pino.transport({
-        target: "pino-pretty",
-        options: { colorize: true, translateTime: "SYS:standard" }
-      });
+const transport = appConfig.LOG_JSON
+  ? undefined
+  : pino.transport({
+      target: "pino-pretty",
+      options: { colorize: true, translateTime: "SYS:standard" }
+    });
 
 export const logger = pino(
   {

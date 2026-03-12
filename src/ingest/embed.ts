@@ -15,7 +15,9 @@ const maxEmbeddingTokensPerRequest = 300000;
 
 const cacheKeyForEmbedding = (model: string, text: string) => sha256Hex(`${model}|${text}`);
 
-export const embedChunks = async (chunks: TextChunk[]): Promise<{
+export const embedChunks = async (
+  chunks: TextChunk[]
+): Promise<{
   embeddedChunks: EmbeddedChunk[];
   cacheHitCount: number;
   embeddedCount: number;

@@ -9,10 +9,7 @@ const buildSourcesBlock = (sources: RetrievedSource[]) =>
     })
     .join("\n\n");
 
-export const buildGroundedAnswerInput = (params: {
-  question: string;
-  sources: RetrievedSource[];
-}) => {
+export const buildGroundedAnswerInput = (params: { question: string; sources: RetrievedSource[] }) => {
   const sourcesBlock = buildSourcesBlock(params.sources);
 
   const systemInstruction =

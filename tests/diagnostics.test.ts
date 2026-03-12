@@ -7,7 +7,7 @@ describe("runDiagnostics", () => {
     const diagnostics = await runDiagnostics({
       startedAtIso: "t0",
       nowIso: () => "t1",
-      measureMs: async <T,>(operation: () => Promise<T>) => {
+      measureMs: async <T>(operation: () => Promise<T>) => {
         const result = await operation();
         return { result, elapsedMs: 7 };
       },
@@ -30,7 +30,7 @@ describe("runDiagnostics", () => {
     const diagnostics = await runDiagnostics({
       startedAtIso: "t0",
       nowIso: () => "t1",
-      measureMs: async <T,>(operation: () => Promise<T>) => {
+      measureMs: async <T>(operation: () => Promise<T>) => {
         const result = await operation();
         return { result, elapsedMs: 2 };
       },
@@ -52,7 +52,7 @@ describe("runDiagnostics", () => {
     const diagnostics = await runDiagnostics({
       startedAtIso: "t0",
       nowIso: () => "t1",
-      measureMs: async <T,>(operation: () => Promise<T>) => {
+      measureMs: async <T>(operation: () => Promise<T>) => {
         const result = await operation();
         return { result, elapsedMs: 3 };
       },

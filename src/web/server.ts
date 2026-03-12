@@ -5,7 +5,11 @@ import path from "node:path";
 import { answerQuestionWithGrounding } from "../answer/ask.js";
 import { retrieveSourcesForQuestion } from "../retrieve/search.js";
 import { formatRetrievedSources } from "../retrieve/format.js";
-import { buildAskTraceArtifact, getDefaultTraceDirectory, persistAskTraceArtifact } from "../answer/traceArtifact.js";
+import {
+  buildAskTraceArtifact,
+  getDefaultTraceDirectory,
+  persistAskTraceArtifact
+} from "../answer/traceArtifact.js";
 import { appConfig } from "../config/env.js";
 import { buildConfigSnapshot } from "../maintenance/configSnapshot.js";
 
@@ -18,11 +22,17 @@ import { createEmbeddingVectors } from "../core/openai.js";
 import { runDiagnostics } from "../maintenance/diagnostics.js";
 import { sha256Hex } from "../core/ids.js";
 import {
-  getDocRegistryEntry, upsertDocRegistryEntry, listDocRegistryEntries,
+  getDocRegistryEntry,
+  upsertDocRegistryEntry,
+  listDocRegistryEntries,
   deleteDocRegistryEntry
 } from "../maintenance/docRegistry.js";
 import { getDocRegistryCollectionName } from "../maintenance/registryNaming.js";
-import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../ingest/registry.js";
+import {
+  buildDocRegistryEntry,
+  computeDocumentContentHash,
+  resolveRegistryTimestamps
+} from "../ingest/registry.js";
 import { createDocumentChunks } from "../ingest/chunk.js";
 import { embedChunks } from "../ingest/embed.js";
 import { extractPdfText } from "../ingest/pdf.js";
@@ -49,7 +59,14 @@ import {
   DiagnosticsRunRequestSchema
 } from "./schemas.js";
 import { RetrieveRequestSchema } from "./schemas.js";
-import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
+import {
+  getRequestId,
+  isHttpError,
+  parseJsonBody,
+  readRequestBodyText,
+  writeJsonResponse,
+  HttpError
+} from "./http.js";
 import { formatZodValidationError } from "./validationErrors.js";
 
 const requestBodyMaxBytes = 1_000_000;
@@ -88,9 +105,8 @@ const handleIngest = async (requestId: string, body: unknown) => {
   if (parsed.replace) {
     contextLogger.info("Replacing existing doc vectors");
     await deleteChunksForDocId(parsed.doc_id);
-  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
-  await deleteDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
-
+    const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+    await deleteDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
   }
 
   const startedAt = Date.now();
@@ -147,10 +163,13 @@ const handleIngest = async (requestId: string, body: unknown) => {
     duration_ms: Date.now() - startedAt
   };
 
-    const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
+  const registryCollectionName = getDocRegistryCollectionName(appConfig.QDRANT_COLLECTION);
   const existingRegistryEntry = await getDocRegistryEntry({ registryCollectionName, docId: parsed.doc_id });
   const nowIso = new Date().toISOString();
-  const timestamps = resolveRegistryTimestamps({ existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null, nowIso });
+  const timestamps = resolveRegistryTimestamps({
+    existingCreatedAtIso: existingRegistryEntry ? existingRegistryEntry.created_at : null,
+    nowIso
+  });
   const contentHash = computeDocumentContentHash(text, (input) => sha256Hex(input));
   const registryEntry = buildDocRegistryEntry({
     docId: parsed.doc_id,
@@ -166,7 +185,7 @@ const handleIngest = async (requestId: string, body: unknown) => {
   });
   await upsertDocRegistryEntry({ registryCollectionName, entry: registryEntry });
 
-await emitWebhookEvent("ingest.completed", summary);
+  await emitWebhookEvent("ingest.completed", summary);
 
   return summary;
 };
@@ -182,7 +201,12 @@ const handleAsk = async (requestId: string, body: unknown) => {
   const contextLogger = createContextLogger({ op: "http.ask", requestId, docId: parsed.doc_id });
   contextLogger.info({ questionLength: parsed.question.length }, "Starting ask");
 
-  const result = await answerQuestionWithGrounding({ docId: parsed.doc_id, question: parsed.question, requestId, includeTrace: parsed.trace });
+  const result = await answerQuestionWithGrounding({
+    docId: parsed.doc_id,
+    question: parsed.question,
+    requestId,
+    includeTrace: parsed.trace
+  });
 
   let trace_path: string | null = null;
 
@@ -205,10 +229,15 @@ const handleAsk = async (requestId: string, body: unknown) => {
     trace_path = await persistAskTraceArtifact({ artifact, directoryPath });
   }
 
-
   return {
     statusCode: 200,
-    payload: { doc_id: parsed.doc_id, output: result.output, sources: result.sources, timings: result.timings, trace_path }
+    payload: {
+      doc_id: parsed.doc_id,
+      output: result.output,
+      sources: result.sources,
+      timings: result.timings,
+      trace_path
+    }
   };
 };
 
@@ -305,7 +334,12 @@ const handleDocExport = async (body: unknown) => {
     pageSize
   });
 
-  return { doc_id: parsed.doc_id, chunk_count: result.chunks.length, scanned_points: result.scannedPoints, chunks: result.chunks };
+  return {
+    doc_id: parsed.doc_id,
+    chunk_count: result.chunks.length,
+    scanned_points: result.scannedPoints,
+    chunks: result.chunks
+  };
 };
 
 const handleRegistryGet = async (body: unknown) => {
@@ -409,12 +443,12 @@ const server = http.createServer(async (req, res) => {
 
     const body = await parseBodyForPost(req);
 
-        if (url.pathname === "/v1/config/snapshot") {
+    if (url.pathname === "/v1/config/snapshot") {
       const snapshot = buildConfigSnapshot();
       return writeJsonResponse(res, 200, snapshot);
     }
 
-if (url.pathname === "/v1/qdrant/check") {
+    if (url.pathname === "/v1/qdrant/check") {
       const result = await handleQdrantCheck();
       return writeJsonResponse(res, 200, result);
     }
@@ -424,7 +458,7 @@ if (url.pathname === "/v1/qdrant/check") {
       return writeJsonResponse(res, 200, result);
     }
 
-        if (url.pathname === "/v1/retrieve") {
+    if (url.pathname === "/v1/retrieve") {
       const handled = await handleRetrieve(requestId, body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
@@ -434,7 +468,7 @@ if (url.pathname === "/v1/qdrant/check") {
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
 
-if (url.pathname === "/v1/ask") {
+    if (url.pathname === "/v1/ask") {
       const handled = await handleAsk(requestId, body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
@@ -464,7 +498,7 @@ if (url.pathname === "/v1/ask") {
       return writeJsonResponse(res, 200, result);
     }
 
-        if (url.pathname === "/v1/registry/get") {
+    if (url.pathname === "/v1/registry/get") {
       const handled = await handleRegistryGet(body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
@@ -474,7 +508,7 @@ if (url.pathname === "/v1/ask") {
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
 
-if (url.pathname === "/v1/chunks/get") {
+    if (url.pathname === "/v1/chunks/get") {
       const handled = await handleChunkGet(body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
     }
@@ -489,7 +523,6 @@ if (url.pathname === "/v1/chunks/get") {
     if (validation) {
       return writeJsonResponse(res, validation.statusCode, validation.payload);
     }
-
 
     logger.error({ err: error, requestId }, "Request failed");
     return writeJsonResponse(res, 500, { error: "Internal server error", request_id: requestId });

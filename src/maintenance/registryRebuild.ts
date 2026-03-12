@@ -33,8 +33,15 @@ export type RegistryRebuildDependencies = {
   nowIso: () => string;
   sha256Hex: (input: string) => string;
   ensureRegistryCollection: () => Promise<void>;
-  listDocIds: (params: { maxPointsToScan: number; pageSize: number }) => Promise<{ docIds: string[]; scannedPoints: number }>;
-  exportChunks: (params: { docId: string; maxChunks: number; pageSize: number }) => Promise<{ chunks: ExportedChunkPayload[]; scannedPoints: number }>;
+  listDocIds: (params: {
+    maxPointsToScan: number;
+    pageSize: number;
+  }) => Promise<{ docIds: string[]; scannedPoints: number }>;
+  exportChunks: (params: {
+    docId: string;
+    maxChunks: number;
+    pageSize: number;
+  }) => Promise<{ chunks: ExportedChunkPayload[]; scannedPoints: number }>;
   upsertRegistryEntry: (entry: DocRegistryEntry) => Promise<void>;
 };
 
@@ -53,15 +60,19 @@ const orderChunks = (chunks: ExportedChunkPayload[]) =>
     return a.chunk_id.localeCompare(b.chunk_id);
   });
 
-const deriveContentHashFromChunkIds = (chunks: ExportedChunkPayload[], sha256Hex: (input: string) => string) => {
+const deriveContentHashFromChunkIds = (
+  chunks: ExportedChunkPayload[],
+  sha256Hex: (input: string) => string
+) => {
   const ordered = orderChunks(chunks);
   const joined = ordered.map((c) => c.chunk_id).join("\n");
   return sha256Hex(joined);
 };
 
 const chooseSource = (chunks: ExportedChunkPayload[]) => {
-  if (chunks.length == 0) return "unknown";
-  const first = orderChunks(chunks)[0];
+  const ordered = orderChunks(chunks);
+  const first = ordered.length > 0 ? ordered[0] : null;
+  if (!first) return "unknown";
   return first.source && first.source.trim().length > 0 ? first.source : "unknown";
 };
 
@@ -89,18 +100,24 @@ const buildRegistryEntry = (params: {
   };
 };
 
-export const rebuildDocRegistry = async (deps: RegistryRebuildDependencies, params: {
-  maxScanPoints: number;
-  listPageSize: number;
-  maxDocs: number;
-  maxChunksPerDoc: number;
-  chunksPageSize: number;
-  dryRun: boolean;
-}): Promise<RegistryRebuildReport> => {
+export const rebuildDocRegistry = async (
+  deps: RegistryRebuildDependencies,
+  params: {
+    maxScanPoints: number;
+    listPageSize: number;
+    maxDocs: number;
+    maxChunksPerDoc: number;
+    chunksPageSize: number;
+    dryRun: boolean;
+  }
+): Promise<RegistryRebuildReport> => {
   const startedAt = deps.nowIso();
   await deps.ensureRegistryCollection();
 
-  const listResult = await deps.listDocIds({ maxPointsToScan: params.maxScanPoints, pageSize: params.listPageSize });
+  const listResult = await deps.listDocIds({
+    maxPointsToScan: params.maxScanPoints,
+    pageSize: params.listPageSize
+  });
   const docIds = listResult.docIds.slice(0, params.maxDocs);
 
   const results: RegistryRebuildDocResult[] = [];
@@ -110,7 +127,11 @@ export const rebuildDocRegistry = async (deps: RegistryRebuildDependencies, para
 
   for (const docId of docIds) {
     try {
-      const exported = await deps.exportChunks({ docId, maxChunks: params.maxChunksPerDoc, pageSize: params.chunksPageSize });
+      const exported = await deps.exportChunks({
+        docId,
+        maxChunks: params.maxChunksPerDoc,
+        pageSize: params.chunksPageSize
+      });
       if (exported.chunks.length == 0) {
         skippedCount += 1;
         results.push({

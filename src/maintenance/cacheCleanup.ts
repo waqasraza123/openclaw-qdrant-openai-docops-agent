@@ -77,7 +77,11 @@ const selectExpired = (entries: CacheFileEntry[], nowMs: number, ttlSeconds: num
   return entries.filter((e) => e.mtimeMs < expiresBeforeMs);
 };
 
-const applyLimits = (entries: CacheFileEntry[], maxDeleteCount: number | null, maxDeleteBytes: number | null) => {
+const applyLimits = (
+  entries: CacheFileEntry[],
+  maxDeleteCount: number | null,
+  maxDeleteBytes: number | null
+) => {
   const ordered = [...entries].sort((a, b) => a.mtimeMs - b.mtimeMs);
   const selected: CacheFileEntry[] = [];
   let bytes = 0;
@@ -101,8 +105,10 @@ export const cleanupCacheDirectory = async (params: {
   maxDeleteBytes: number | null;
 }): Promise<CacheCleanupReport> => {
   if (params.ttlSeconds <= 0) throw new Error("ttlSeconds must be > 0");
-  if (params.maxDeleteCount !== null && params.maxDeleteCount <= 0) throw new Error("maxDeleteCount must be > 0");
-  if (params.maxDeleteBytes !== null && params.maxDeleteBytes <= 0) throw new Error("maxDeleteBytes must be > 0");
+  if (params.maxDeleteCount !== null && params.maxDeleteCount <= 0)
+    throw new Error("maxDeleteCount must be > 0");
+  if (params.maxDeleteBytes !== null && params.maxDeleteBytes <= 0)
+    throw new Error("maxDeleteBytes must be > 0");
 
   const cacheDirResolved = path.resolve(params.cacheDir);
   const nowIso = new Date(params.nowMs).toISOString();

@@ -114,7 +114,10 @@ export const ensureDocRegistryCollection = async (params: {
   const registryVectorSize = 1;
 
   if (!params.client) {
-    await ensureQdrantCollection({ collectionName: params.registryCollectionName, vectorSize: registryVectorSize });
+    await ensureQdrantCollection({
+      collectionName: params.registryCollectionName,
+      vectorSize: registryVectorSize
+    });
     return;
   }
 
@@ -144,9 +147,12 @@ export const upsertDocRegistryEntry = async (params: {
 }): Promise<void> => {
   const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryClient);
 
-  await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName, client: params.client });
-
-  await client.upsert(params.registryCollectionName, {
+  if (params.client) {
+    await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName, client: params.client });
+  } else {
+    await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName });
+  }
+await client.upsert(params.registryCollectionName, {
     wait: true,
     points: [
       {

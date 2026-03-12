@@ -30,7 +30,7 @@ export const answerQuestionWithGrounding = async (params: {
   output: AnswerOutput;
   sources: Array<{ sourceId: string; chunkId: string; score: number }>;
   timings: { retrieval_ms: number; generation_ms: number };
-trace?: AskTrace;
+  trace?: AskTrace | undefined;
 }> => {
   const requestId = params.requestId ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const contextualLogger = createContextLogger({ op: "ask", requestId, docId: params.docId });
@@ -47,12 +47,18 @@ trace?: AskTrace;
 
     await emitWebhookEvent("ask.completed", { doc_id: params.docId, refused: true, citations_count: 0 });
 
-    return { output: refusal, sources: [], timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: 0 } };
+    return {
+      output: refusal,
+      sources: [],
+      timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: 0 }
+    };
   }
 
   const generationStart = Date.now();
   const input = buildGroundedAnswerInput({ question: params.question, sources: retrieval.sources });
-  const trace = params.includeTrace ? { request_id: requestId, prompt_input: input, retrieved_sources: retrieval.sources } : undefined;
+  const trace = params.includeTrace
+    ? { request_id: requestId, prompt_input: input, retrieved_sources: retrieval.sources }
+    : undefined;
   const output = await generateGroundedAnswer(input);
   const generationMs = Date.now() - generationStart;
 

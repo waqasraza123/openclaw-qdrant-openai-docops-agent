@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { ensureDocRegistryCollection, getDocRegistryEntry, listDocRegistryEntries, upsertDocRegistryEntry } from "../src/maintenance/docRegistry.js";
+import {
+  ensureDocRegistryCollection,
+  getDocRegistryEntry,
+  listDocRegistryEntries,
+  upsertDocRegistryEntry
+} from "../src/maintenance/docRegistry.js";
 
 describe("doc registry", () => {
   it("creates registry collection when missing", async () => {
@@ -14,7 +19,7 @@ describe("doc registry", () => {
       },
       getCollection: async () => ({}),
       upsert: async () => ({}),
-      retrieve: async () => ([]),
+      retrieve: async () => [],
       scroll: async () => ({ points: [], next_page_offset: null })
     };
 
@@ -51,7 +56,11 @@ describe("doc registry", () => {
     };
 
     await upsertDocRegistryEntry({ registryCollectionName: "reg", entry, client: fakeClient });
-    const loaded = await getDocRegistryEntry({ registryCollectionName: "reg", docId: "d1", client: fakeClient });
+    const loaded = await getDocRegistryEntry({
+      registryCollectionName: "reg",
+      docId: "d1",
+      client: fakeClient
+    });
 
     expect(loaded?.doc_id).toBe("d1");
     expect(loaded?.chunk_count).toBe(10);
@@ -63,27 +72,71 @@ describe("doc registry", () => {
       createCollection: async () => ({}),
       getCollection: async () => ({ config: { params: { vectors: { size: 1 } } } }),
       upsert: async () => ({}),
-      retrieve: async () => ([]),
+      retrieve: async () => [],
       scroll: async (_collectionName: string, params: any) => {
         if (!params.offset) {
           return {
             points: [
-              { payload: { doc_id: "b", source: "s", page_count: null, chunk_count: 1, content_hash: "h", embed_model: "m", chunk_max_tokens: 1, chunk_overlap_tokens: 0, created_at: "t", updated_at: "t" } },
-              { payload: { doc_id: "a", source: "s", page_count: null, chunk_count: 1, content_hash: "h", embed_model: "m", chunk_max_tokens: 1, chunk_overlap_tokens: 0, created_at: "t", updated_at: "t" } }
+              {
+                payload: {
+                  doc_id: "b",
+                  source: "s",
+                  page_count: null,
+                  chunk_count: 1,
+                  content_hash: "h",
+                  embed_model: "m",
+                  chunk_max_tokens: 1,
+                  chunk_overlap_tokens: 0,
+                  created_at: "t",
+                  updated_at: "t"
+                }
+              },
+              {
+                payload: {
+                  doc_id: "a",
+                  source: "s",
+                  page_count: null,
+                  chunk_count: 1,
+                  content_hash: "h",
+                  embed_model: "m",
+                  chunk_max_tokens: 1,
+                  chunk_overlap_tokens: 0,
+                  created_at: "t",
+                  updated_at: "t"
+                }
+              }
             ],
             next_page_offset: "p2"
           };
         }
         return {
           points: [
-            { payload: { doc_id: "c", source: "s", page_count: null, chunk_count: 1, content_hash: "h", embed_model: "m", chunk_max_tokens: 1, chunk_overlap_tokens: 0, created_at: "t", updated_at: "t" } }
+            {
+              payload: {
+                doc_id: "c",
+                source: "s",
+                page_count: null,
+                chunk_count: 1,
+                content_hash: "h",
+                embed_model: "m",
+                chunk_max_tokens: 1,
+                chunk_overlap_tokens: 0,
+                created_at: "t",
+                updated_at: "t"
+              }
+            }
           ],
           next_page_offset: null
         };
       }
     };
 
-    const result = await listDocRegistryEntries({ registryCollectionName: "reg", maxDocs: 100, pageSize: 2, client: fakeClient });
+    const result = await listDocRegistryEntries({
+      registryCollectionName: "reg",
+      maxDocs: 100,
+      pageSize: 2,
+      client: fakeClient
+    });
     expect(result.entries.map((e) => e.doc_id)).toEqual(["a", "b", "c"]);
     expect(result.scannedPoints).toBe(3);
   });

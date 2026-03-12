@@ -1,2 +1,1 @@
-export const getDocRegistryCollectionName = (baseCollectionName: string) =>
-  `${baseCollectionName}_registry`;
+export const getDocRegistryCollectionName = (baseCollectionName: string) => `${baseCollectionName}_registry`;

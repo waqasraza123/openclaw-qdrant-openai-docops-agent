@@ -12,8 +12,7 @@ const ensureCacheDirectory = async () => {
   await fs.mkdir(appConfig.CACHE_DIR, { recursive: true });
 };
 
-const cachePathForKey = (cacheKey: string) =>
-  path.join(appConfig.CACHE_DIR, `${cacheKey}.json`);
+const cachePathForKey = (cacheKey: string) => path.join(appConfig.CACHE_DIR, `${cacheKey}.json`);
 
 export const readCacheValue = async <T>(cacheKey: string): Promise<T | null> => {
   if (!appConfig.CACHE_ENABLED) return null;

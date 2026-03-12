@@ -4,22 +4,15 @@ import prettier from "eslint-config-prettier";
 
 export default [
   {
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      "tmp/**",
-      ".workdir/**",
-      "coverage/**",
-      "eslint.config.*"
-    ]
+    ignores: ["dist/**", "node_modules/**", "tmp/**", ".workdir/**", "coverage/**", "eslint.config.*"]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
-      "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
       "@typescript-eslint/require-await": "off",
       "@typescript-eslint/no-redundant-type-constituents": "off"
     }

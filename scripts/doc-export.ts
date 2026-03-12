@@ -26,9 +26,14 @@ const run = async () => {
   const pageSizeArg = getArgValue(args, "--page-size");
   const outPathArg = getArgValue(args, "--out");
 
-  if (!docId) throw new Error("Usage: npm run doc:export -- --doc-id <id> [--max-chunks N] [--page-size N] [--out path]");
+  if (!docId)
+    throw new Error(
+      "Usage: npm run doc:export -- --doc-id <id> [--max-chunks N] [--page-size N] [--out path]"
+    );
 
-  const maxChunks = maxChunksArg ? parsePositiveInt(maxChunksArg, "max-chunks") : appConfig.MAX_CHUNKS_PER_DOC;
+  const maxChunks = maxChunksArg
+    ? parsePositiveInt(maxChunksArg, "max-chunks")
+    : appConfig.MAX_CHUNKS_PER_DOC;
   const pageSize = pageSizeArg ? parsePositiveInt(pageSizeArg, "page-size") : appConfig.QDRANT_BATCH_SIZE;
 
   const result = await exportChunksForDocId({
@@ -53,7 +58,10 @@ const run = async () => {
 
   await fs.writeFile(resolvedOutPath, JSON.stringify(payload, null, 2), "utf8");
 
-  process.stdout.write(JSON.stringify({ doc_id: docId, out_path: resolvedOutPath, chunk_count: result.chunks.length }, null, 2) + "\n");
+  process.stdout.write(
+    JSON.stringify({ doc_id: docId, out_path: resolvedOutPath, chunk_count: result.chunks.length }, null, 2) +
+      "\n"
+  );
 };
 
 run().catch((error) => {

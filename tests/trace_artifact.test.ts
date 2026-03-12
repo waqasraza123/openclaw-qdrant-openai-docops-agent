@@ -4,7 +4,11 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { buildAskTraceArtifact, persistAskTraceArtifact, sanitizeTraceId } from "../src/answer/traceArtifact.js";
+import {
+  buildAskTraceArtifact,
+  persistAskTraceArtifact,
+  sanitizeTraceId
+} from "../src/answer/traceArtifact.js";
 
 describe("trace artifact", () => {
   it("sanitizes trace ids", () => {

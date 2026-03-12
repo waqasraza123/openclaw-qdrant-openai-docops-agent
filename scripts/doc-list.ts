@@ -21,7 +21,9 @@ const run = async () => {
   const maxScanArg = getArgValue(args, "--max-scan");
   const pageSizeArg = getArgValue(args, "--page-size");
 
-  const maxPointsToScan = maxScanArg ? parsePositiveInt(maxScanArg, "max-scan") : appConfig.MAX_CHUNKS_PER_DOC;
+  const maxPointsToScan = maxScanArg
+    ? parsePositiveInt(maxScanArg, "max-scan")
+    : appConfig.MAX_CHUNKS_PER_DOC;
   const pageSize = pageSizeArg ? parsePositiveInt(pageSizeArg, "page-size") : appConfig.QDRANT_BATCH_SIZE;
 
   const result = await listDocIdsInCollection({
@@ -30,7 +32,9 @@ const run = async () => {
     pageSize
   });
 
-  process.stdout.write(JSON.stringify({ doc_ids: result.docIds, scanned_points: result.scannedPoints }, null, 2) + "\n");
+  process.stdout.write(
+    JSON.stringify({ doc_ids: result.docIds, scanned_points: result.scannedPoints }, null, 2) + "\n"
+  );
 };
 
 run().catch((error) => {

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDocRegistryEntry, computeDocumentContentHash, resolveRegistryTimestamps } from "../src/ingest/registry.js";
+import {
+  buildDocRegistryEntry,
+  computeDocumentContentHash,
+  resolveRegistryTimestamps
+} from "../src/ingest/registry.js";
 
 describe("ingest registry helpers", () => {
   it("computes deterministic content hash via injected sha256", () => {

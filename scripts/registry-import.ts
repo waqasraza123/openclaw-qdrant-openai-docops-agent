@@ -1,7 +1,14 @@
 import { appConfig } from "../src/config/env.js";
 import { logger } from "../src/core/logger.js";
-import { ensureDocRegistryCollection, getDocRegistryEntry, upsertDocRegistryEntry } from "../src/maintenance/docRegistry.js";
-import { loadRegistryExportPayloadFromFile, importRegistryExportPayload } from "../src/maintenance/registryImport.js";
+import {
+  ensureDocRegistryCollection,
+  getDocRegistryEntry,
+  upsertDocRegistryEntry
+} from "../src/maintenance/docRegistry.js";
+import {
+  loadRegistryExportPayloadFromFile,
+  importRegistryExportPayload
+} from "../src/maintenance/registryImport.js";
 import { getDocRegistryCollectionName } from "../src/maintenance/registryNaming.js";
 
 const getArgValue = (args: string[], flag: string) => {
@@ -33,7 +40,9 @@ const run = async () => {
   const maxEntriesArg = getArgValue(args, "--max-entries");
 
   if (!inPath) {
-    throw new Error("Usage: npm run registry:import -- --in <path> [--dry-run true] [--skip-existing true] [--max-entries N]");
+    throw new Error(
+      "Usage: npm run registry:import -- --in <path> [--dry-run true] [--skip-existing true] [--max-entries N]"
+    );
   }
 
   const maxEntries = maxEntriesArg ? parsePositiveInt(maxEntriesArg, "max-entries") : 50000;

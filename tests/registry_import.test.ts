@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { importRegistryExportPayload, parseRegistryExportPayload } from "../src/maintenance/registryImport.js";
+import {
+  importRegistryExportPayload,
+  parseRegistryExportPayload
+} from "../src/maintenance/registryImport.js";
 
 describe("registry import", () => {
   it("parses payload and normalizes entry_count", () => {
@@ -70,7 +73,9 @@ describe("registry import", () => {
       payload,
       dependencies: {
         ensureRegistryCollection: async () => undefined,
-        upsertEntry: async (entry) => upserts.push(entry.doc_id),
+        upsertEntry: async (entry) => {
+        upserts.push(entry.doc_id);
+      },
         getExistingEntry: async () => null
       },
       skipExisting: false,
@@ -87,8 +92,13 @@ describe("registry import", () => {
       payload,
       dependencies: {
         ensureRegistryCollection: async () => undefined,
-        upsertEntry: async (entry) => upserts.push(entry.doc_id),
-        getExistingEntry: async (docId) => (docId === "d1" ? payload.entries[0] : null)
+        upsertEntry: async (entry) => {
+        upserts.push(entry.doc_id);
+      },
+        getExistingEntry: async (docId) => {
+        const existing = payload.entries.length > 0 ? payload.entries[0] : null;
+        return docId === "d1" && existing ? existing : null;
+      }
       },
       skipExisting: true,
       dryRun: false,

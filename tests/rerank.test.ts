@@ -6,9 +6,21 @@ describe("rerankSourcesDeterministically", () => {
   it("orders by token overlap then score then chunkIndex then chunkId", () => {
     const question = "refund policy deadline";
     const sources = [
-      { chunkId: "b", score: 0.9, text: "This section describes the refund policy and deadline", source: "a.pdf", chunkIndex: 5 },
+      {
+        chunkId: "b",
+        score: 0.9,
+        text: "This section describes the refund policy and deadline",
+        source: "a.pdf",
+        chunkIndex: 5
+      },
       { chunkId: "a", score: 0.95, text: "Refund policy is described here", source: "a.pdf", chunkIndex: 3 },
-      { chunkId: "c", score: 0.99, text: "Unrelated content about onboarding", source: "a.pdf", chunkIndex: 1 }
+      {
+        chunkId: "c",
+        score: 0.99,
+        text: "Unrelated content about onboarding",
+        source: "a.pdf",
+        chunkIndex: 1
+      }
     ];
 
     const reranked = rerankSourcesDeterministically({ question, sources });

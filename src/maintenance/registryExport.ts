@@ -11,8 +11,7 @@ export type RegistryExportPayload = {
   entries: DocRegistryEntry[];
 };
 
-export const sanitizeFilePart = (value: string) =>
-  value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 160);
+export const sanitizeFilePart = (value: string) => value.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 160);
 
 export const buildRegistryExportPayload = (params: {
   createdAtIso: string;
