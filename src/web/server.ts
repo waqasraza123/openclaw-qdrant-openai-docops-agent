@@ -44,6 +44,7 @@ import {
   RegistryListRequestSchema
 } from "./schemas.js";
 import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
+import { formatZodValidationError } from "./validationErrors.js";
 
 const requestBodyMaxBytes = 1_000_000;
 
@@ -410,6 +411,12 @@ if (url.pathname === "/v1/chunks/get") {
     if (isHttpError(error)) {
       return writeJsonResponse(res, error.statusCode, { error: error.message });
     }
+
+    const validation = formatZodValidationError(error);
+    if (validation) {
+      return writeJsonResponse(res, validation.statusCode, validation.payload);
+    }
+
 
     logger.error({ err: error, requestId }, "Request failed");
     return writeJsonResponse(res, 500, { error: "Internal server error", request_id: requestId });
