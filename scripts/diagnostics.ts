@@ -28,9 +28,7 @@ const run = async () => {
     includeOpenAi: true
   });
 
-  process.stdout.write(JSON.stringify(diagnostics, null, 2) + "
-");
-
+  process.stdout.write(JSON.stringify(diagnostics, null, 2) + "\n");
   if (!diagnostics.ok) process.exitCode = 1;
 };
 
