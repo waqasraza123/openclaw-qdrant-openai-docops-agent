@@ -1,6 +1,7 @@
 import { appConfig } from "../config/env.js";
 import { createEmbeddingVectors } from "../core/openai.js";
 import { qdrantClient } from "../core/qdrant.js";
+import { rerankSourcesDeterministically } from "./rerank.js";
 
 export type RetrievedSource = {
   sourceId: string;
@@ -23,6 +24,9 @@ const parsePayloadNumber = (payload: unknown, key: string) => {
   return typeof value === "number" ? value : null;
 };
 
+const assignSourceIds = (sources: Array<Omit<RetrievedSource, "sourceId">>): RetrievedSource[] =>
+  sources.map((s, index) => ({ ...s, sourceId: `S${index + 1}` }));
+
 export const retrieveSourcesForQuestion = async (params: {
   docId: string;
   question: string;
@@ -36,6 +40,9 @@ export const retrieveSourcesForQuestion = async (params: {
 
   const { vectors } = await createEmbeddingVectors([params.question]);
   const queryVector = vectors[0];
+  if (!queryVector) {
+    throw new Error("Failed to create query embedding vector");
+  }
 
   const results = await qdrantClient.search(appConfig.QDRANT_COLLECTION, {
     vector: queryVector,
@@ -43,13 +50,11 @@ export const retrieveSourcesForQuestion = async (params: {
     score_threshold: minScore,
     with_vector: false,
     with_payload: ["doc_id", "chunk_id", "chunk_index", "source", "text"],
-    filter: {
-      must: [{ key: "doc_id", match: { value: params.docId } }]
-    }
+    filter: { must: [{ key: "doc_id", match: { value: params.docId } }] }
   });
 
-  const sources: RetrievedSource[] = results
-    .map((point, index) => {
+  const mapped = results
+    .map((point) => {
       const payload = (point as { payload?: unknown }).payload ?? null;
       const chunkId = parsePayloadString(payload, "chunk_id");
       const text = parsePayloadString(payload, "text");
@@ -60,16 +65,13 @@ export const retrieveSourcesForQuestion = async (params: {
       if (!chunkId || !text || !source || chunkIndex === null) return null;
       if (typeof score !== "number") return null;
 
-      return {
-        sourceId: `S${index + 1}`,
-        chunkId,
-        score,
-        text,
-        source,
-        chunkIndex
-      };
+      return { chunkId, score, text, source, chunkIndex };
     })
-    .filter((x): x is RetrievedSource => x !== null);
+    .filter(
+      (x): x is { chunkId: string; score: number; text: string; source: string; chunkIndex: number } => x !== null
+    );
 
-  return { sources, retrievalMs: Date.now() - startedAt };
+  const ordered = appConfig.RE_RANK ? rerankSourcesDeterministically({ question: params.question, sources: mapped }) : mapped;
+
+  return { sources: assignSourceIds(ordered), retrievalMs: Date.now() - startedAt };
 };

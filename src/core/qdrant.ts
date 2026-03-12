@@ -2,11 +2,11 @@ import { QdrantClient } from "@qdrant/js-client-rest";
 
 import { appConfig } from "../config/env.js";
 
-export const qdrantClient = new QdrantClient({
-  url: appConfig.QDRANT_URL,
-  apiKey: appConfig.QDRANT_API_KEY,
-  timeout: appConfig.REQUEST_TIMEOUT_MS
-});
+const qdrantClientParams = appConfig.QDRANT_API_KEY
+  ? { url: appConfig.QDRANT_URL, apiKey: appConfig.QDRANT_API_KEY, timeout: appConfig.REQUEST_TIMEOUT_MS }
+  : { url: appConfig.QDRANT_URL, timeout: appConfig.REQUEST_TIMEOUT_MS };
+
+export const qdrantClient = new QdrantClient(qdrantClientParams);
 
 export const ensureQdrantCollection = async (params: {
   collectionName: string;

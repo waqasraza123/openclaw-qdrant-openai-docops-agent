@@ -23,11 +23,13 @@ export const embedChunks = async (chunks: TextChunk[]): Promise<{
   const embeddedChunks: EmbeddedChunk[] = [];
   let cacheHitCount = 0;
 
-  const missing: { chunk: TextChunk; cacheKey: string }[] = [];
+  const missing: Array<{ chunk: TextChunk; cacheKey: string }> = [];
 
   for (const chunk of chunks) {
     if (chunk.tokenCount > maxEmbeddingTokensPerInput) {
-      throw new Error(`Chunk tokenCount exceeds embedding limit: ${chunk.tokenCount} > ${maxEmbeddingTokensPerInput}`);
+      throw new Error(
+        `Chunk tokenCount exceeds embedding limit: ${chunk.tokenCount} > ${maxEmbeddingTokensPerInput}`
+      );
     }
 
     const cacheKey = cacheKeyForEmbedding(appConfig.OPENAI_EMBED_MODEL, chunk.text);
@@ -50,15 +52,19 @@ export const embedChunks = async (chunks: TextChunk[]): Promise<{
   let index = 0;
 
   while (index < missing.length) {
-    const batch: { chunk: TextChunk; cacheKey: string }[] = [];
+    const batch: Array<{ chunk: TextChunk; cacheKey: string }> = [];
     let tokenSum = 0;
 
     while (index < missing.length && batch.length < appConfig.QDRANT_BATCH_SIZE) {
       const candidate = missing[index];
+      if (!candidate) break;
+
       const candidateTokens = countEmbeddingTokens(candidate.chunk.text);
 
       if (candidateTokens > maxEmbeddingTokensPerInput) {
-        throw new Error(`Chunk token count exceeds embedding model limit: ${candidateTokens} > ${maxEmbeddingTokensPerInput}`);
+        throw new Error(
+          `Chunk token count exceeds embedding model limit: ${candidateTokens} > ${maxEmbeddingTokensPerInput}`
+        );
       }
 
       if (batch.length > 0 && tokenSum + candidateTokens > maxEmbeddingTokensPerRequest) {
@@ -70,12 +76,24 @@ export const embedChunks = async (chunks: TextChunk[]): Promise<{
       index += 1;
     }
 
+    if (batch.length === 0) {
+      throw new Error("Embedding batch creation failed with empty batch");
+    }
+
     const inputs = batch.map((b) => b.chunk.text);
     const { vectors } = await createEmbeddingVectors(inputs);
+
+    if (vectors.length !== batch.length) {
+      throw new Error(`Embedding vectors length mismatch: ${vectors.length} != ${batch.length}`);
+    }
 
     for (let i = 0; i < batch.length; i += 1) {
       const item = batch[i];
       const vector = vectors[i];
+
+      if (!item) throw new Error("Embedding batch item missing");
+      if (!vector) throw new Error("Embedding vector missing");
+
       await writeCacheValue(item.cacheKey, vector);
       embeddedChunks.push({ ...item.chunk, vector });
       embeddedCount += 1;

@@ -1,5 +1,20 @@
 import http from "node:http";
 
+export class HttpError extends Error {
+  readonly statusCode: number;
+
+  constructor(statusCode: number, message: string) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
+export const isHttpError = (error: unknown): error is HttpError => {
+  if (typeof error !== "object" || error === null) return false;
+  const record = error as Record<string, unknown>;
+  return typeof record["statusCode"] === "number" && typeof record["message"] === "string";
+};
+
 export const readRequestBodyText = async (req: http.IncomingMessage, maxBytes: number) => {
   const chunks: Buffer[] = [];
   let totalBytes = 0;
@@ -7,7 +22,7 @@ export const readRequestBodyText = async (req: http.IncomingMessage, maxBytes: n
   for await (const chunk of req) {
     const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
     totalBytes += buffer.length;
-    if (totalBytes > maxBytes) throw new Error("Request body too large");
+    if (totalBytes > maxBytes) throw new HttpError(413, "Request body too large");
     chunks.push(buffer);
   }
 
@@ -15,8 +30,13 @@ export const readRequestBodyText = async (req: http.IncomingMessage, maxBytes: n
 };
 
 export const parseJsonBody = (raw: string) => {
-  if (raw.trim().length == 0) return {};
-  return JSON.parse(raw) as unknown;
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return {};
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    throw new HttpError(400, "Invalid JSON body");
+  }
 };
 
 export const writeJsonResponse = (res: http.ServerResponse, statusCode: number, payload: unknown) => {

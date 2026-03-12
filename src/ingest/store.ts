@@ -13,7 +13,12 @@ export const upsertEmbeddedChunks = async (params: {
     throw new Error("No embedded chunks to upsert");
   }
 
-  const vectorSize = embeddedChunks[0].vector.length;
+  const firstChunk = embeddedChunks[0];
+  if (!firstChunk) {
+    throw new Error("No embedded chunks to upsert");
+  }
+
+  const vectorSize = firstChunk.vector.length;
   if (vectorSize <= 0) {
     throw new Error("Invalid embedding vector size");
   }

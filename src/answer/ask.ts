@@ -4,23 +4,9 @@ import { emitWebhookEvent } from "../core/webhook.js";
 import { retrieveSourcesForQuestion } from "../retrieve/search.js";
 import { buildGroundedAnswerInput } from "./prompt.js";
 import { generateGroundedAnswer } from "./generate.js";
+import { validateCitationsMapping } from "./validation.js";
 
 import type { AnswerOutput } from "./schema.js";
-
-const validateCitations = (params: {
-  sources: Array<{ sourceId: string; chunkId: string }>;
-  output: AnswerOutput;
-}) => {
-  const sourceToChunk = new Map(params.sources.map((s) => [s.sourceId, s.chunkId] as const));
-
-  for (const c of params.output.citations) {
-    const expectedChunk = sourceToChunk.get(c.source_id);
-    if (!expectedChunk) return false;
-    if (expectedChunk !== c.chunk_id) return false;
-  }
-
-  return true;
-};
 
 export const answerQuestionWithGrounding = async (params: {
   docId: string;
@@ -33,10 +19,7 @@ export const answerQuestionWithGrounding = async (params: {
   const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   const contextualLogger = createContextLogger({ op: "ask", requestId, docId: params.docId });
 
-  const retrieval = await retrieveSourcesForQuestion({
-    docId: params.docId,
-    question: params.question
-  });
+  const retrieval = await retrieveSourcesForQuestion({ docId: params.docId, question: params.question });
 
   if (appConfig.ENABLE_REFUSAL_GUARD && retrieval.sources.length === 0) {
     const refusal: AnswerOutput = {
@@ -46,17 +29,9 @@ export const answerQuestionWithGrounding = async (params: {
       refusal_reason: "No sufficiently relevant context was retrieved for this question."
     };
 
-    await emitWebhookEvent("ask.completed", {
-      doc_id: params.docId,
-      refused: true,
-      citations_count: 0
-    });
+    await emitWebhookEvent("ask.completed", { doc_id: params.docId, refused: true, citations_count: 0 });
 
-    return {
-      output: refusal,
-      sources: [],
-      timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: 0 }
-    };
+    return { output: refusal, sources: [], timings: { retrieval_ms: retrieval.retrievalMs, generation_ms: 0 } };
   }
 
   const generationStart = Date.now();
@@ -65,7 +40,7 @@ export const answerQuestionWithGrounding = async (params: {
   const generationMs = Date.now() - generationStart;
 
   if (appConfig.ENABLE_CITATIONS) {
-    const citationsValid = validateCitations({
+    const citationsValid = validateCitationsMapping({
       sources: retrieval.sources.map((s) => ({ sourceId: s.sourceId, chunkId: s.chunkId })),
       output
     });
@@ -80,11 +55,7 @@ export const answerQuestionWithGrounding = async (params: {
 
       contextualLogger.warn("Invalid citations detected, returning refusal");
 
-      await emitWebhookEvent("ask.completed", {
-        doc_id: params.docId,
-        refused: true,
-        citations_count: 0
-      });
+      await emitWebhookEvent("ask.completed", { doc_id: params.docId, refused: true, citations_count: 0 });
 
       return {
         output: refusal,

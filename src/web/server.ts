@@ -15,10 +15,21 @@ import { extractPdfText } from "../ingest/pdf.js";
 import { upsertEmbeddedChunks } from "../ingest/store.js";
 import { countChunksForDocId, deleteChunksForDocId } from "../maintenance/documents.js";
 import { getChunkForDocIdByChunkId } from "../maintenance/chunks.js";
+import { listDocIdsInCollection } from "../maintenance/docList.js";
+import { exportChunksForDocId } from "../maintenance/docExport.js";
 import { loadEvalSetFromFile } from "../eval/set.js";
 import { judgeAuditCase } from "../eval/judge.js";
 import { buildAuditReport, writeAuditReportFiles } from "../eval/report.js";
-import { AuditRunRequestSchema, AskRequestSchema, ChunkGetRequestSchema, DocDeleteRequestSchema, DocStatsRequestSchema, IngestRequestSchema } from "./schemas.js";
+import {
+  AuditRunRequestSchema,
+  AskRequestSchema,
+  ChunkGetRequestSchema,
+  DocDeleteRequestSchema,
+  DocExportRequestSchema,
+  DocStatsRequestSchema,
+  DocsListRequestSchema,
+  IngestRequestSchema
+} from "./schemas.js";
 import { getRequestId, isHttpError, parseJsonBody, readRequestBodyText, writeJsonResponse, HttpError } from "./http.js";
 
 const requestBodyMaxBytes = 1_000_000;
@@ -50,7 +61,7 @@ const handleIngest = async (requestId: string, body: unknown) => {
 
   const resolvedPdfPath = path.resolve(parsed.pdf_path);
   const exists = await fileExists(resolvedPdfPath);
-  if (!exists) throw new HttpError(400, `PDF not found: ${resolvedPdfPath}`);
+  if (!exists) throw new HttpError(400, "PDF not found: " + resolvedPdfPath);
 
   const contextLogger = createContextLogger({ op: "http.ingest", requestId, docId: parsed.doc_id });
 
@@ -168,6 +179,37 @@ const handleChunkGet = async (body: unknown) => {
   return { statusCode: 200, payload: chunk };
 };
 
+const handleDocsList = async (body: unknown) => {
+  const parsed = DocsListRequestSchema.parse(body);
+
+  const maxPointsToScan = parsed.max_scan ?? appConfig.MAX_CHUNKS_PER_DOC;
+  const pageSize = parsed.page_size ?? appConfig.QDRANT_BATCH_SIZE;
+
+  const result = await listDocIdsInCollection({
+    collectionName: appConfig.QDRANT_COLLECTION,
+    maxPointsToScan,
+    pageSize
+  });
+
+  return { doc_ids: result.docIds, scanned_points: result.scannedPoints };
+};
+
+const handleDocExport = async (body: unknown) => {
+  const parsed = DocExportRequestSchema.parse(body);
+
+  const maxChunks = parsed.max_chunks ?? appConfig.MAX_CHUNKS_PER_DOC;
+  const pageSize = parsed.page_size ?? appConfig.QDRANT_BATCH_SIZE;
+
+  const result = await exportChunksForDocId({
+    collectionName: appConfig.QDRANT_COLLECTION,
+    docId: parsed.doc_id,
+    maxChunks,
+    pageSize
+  });
+
+  return { doc_id: parsed.doc_id, chunk_count: result.chunks.length, scanned_points: result.scannedPoints, chunks: result.chunks };
+};
+
 const server = http.createServer(async (req, res) => {
   const release = await concurrencySemaphore.acquire();
   const requestId = getRequestId(req);
@@ -176,7 +218,7 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const method = req.method ?? "GET";
-    const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
+    const url = new URL(req.url ?? "/", "http://" + (req.headers.host ?? "localhost"));
 
     if (method === "GET" && url.pathname === "/health") {
       return writeJsonResponse(res, 200, { ok: true });
@@ -216,6 +258,16 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/v1/docs/delete") {
       const handled = await handleDocDelete(body);
       return writeJsonResponse(res, handled.statusCode, handled.payload);
+    }
+
+    if (url.pathname === "/v1/docs/list") {
+      const result = await handleDocsList(body);
+      return writeJsonResponse(res, 200, result);
+    }
+
+    if (url.pathname === "/v1/docs/export") {
+      const result = await handleDocExport(body);
+      return writeJsonResponse(res, 200, result);
     }
 
     if (url.pathname === "/v1/chunks/get") {

@@ -11,6 +11,10 @@ export type StoredChunkPayload = {
   created_at: string;
 };
 
+export type QdrantChunksClient = {
+  retrieve: (collectionName: string, params: unknown) => Promise<unknown>;
+};
+
 const parsePayloadString = (payload: unknown, key: string) => {
   const record = payload as Record<string, unknown> | null;
   const value = record ? record[key] : undefined;
@@ -23,15 +27,14 @@ const parsePayloadNumber = (payload: unknown, key: string) => {
   return typeof value === "number" ? value : null;
 };
 
-export const getChunkForDocIdByChunkId = async (params: {
-  docId: string;
-  chunkId: string;
-}): Promise<StoredChunkPayload | null> => {
-  const points = await qdrantClient.retrieve(appConfig.QDRANT_COLLECTION, {
-    ids: [params.chunkId],
-    with_payload: true,
-    with_vector: false
-  });
+export const getChunkForDocIdByChunkId = async (
+  params: { docId: string; chunkId: string },
+  options?: { collectionName?: string; client?: QdrantChunksClient }
+): Promise<StoredChunkPayload | null> => {
+  const client = options?.client ?? (qdrantClient as unknown as QdrantChunksClient);
+  const collectionName = options?.collectionName ?? appConfig.QDRANT_COLLECTION;
+
+  const points = await client.retrieve(collectionName, { ids: [params.chunkId], with_payload: true, with_vector: false });
 
   if (!Array.isArray(points) || points.length === 0) return null;
 
