@@ -1,5 +1,5 @@
 dist
-coverage
-tmp
-.qdrant
 node_modules
+tmp
+.workdir
+coverage
