@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { ensureQdrantCollection, qdrantClient } from "../core/qdrant.js";
 
 export type DocRegistryEntry = {
@@ -107,6 +109,23 @@ const parseRegistryPayload = (payload: unknown): DocRegistryEntry | null => {
   };
 };
 
+const toDeterministicUuid = (value: string) => {
+  const hexChars = createHash("sha256").update(value).digest("hex").slice(0, 32).split("");
+  hexChars[12] = "5";
+  const variantIndex = parseInt(hexChars[16] ?? "0", 16) % 4;
+  hexChars[16] = ["8", "9", "a", "b"][variantIndex] ?? "8";
+
+  return [
+    hexChars.slice(0, 8).join(""),
+    hexChars.slice(8, 12).join(""),
+    hexChars.slice(12, 16).join(""),
+    hexChars.slice(16, 20).join(""),
+    hexChars.slice(20, 32).join("")
+  ].join("-");
+};
+
+const getDocRegistryPointId = (docId: string) => toDeterministicUuid(`doc-registry:${docId}`);
+
 export const ensureDocRegistryCollection = async (params: {
   registryCollectionName: string;
   client?: QdrantDocRegistryClient;
@@ -155,11 +174,14 @@ export const upsertDocRegistryEntry = async (params: {
   } else {
     await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName });
   }
+
+  const pointId = getDocRegistryPointId(params.entry.doc_id);
+
   await client.upsert(params.registryCollectionName, {
     wait: true,
     points: [
       {
-        id: params.entry.doc_id,
+        id: pointId,
         vector: [0],
         payload: params.entry
       }
@@ -174,8 +196,19 @@ export const getDocRegistryEntry = async (params: {
 }): Promise<DocRegistryEntry | null> => {
   const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryClient);
 
+  if (params.client) {
+    await ensureDocRegistryCollection({
+      registryCollectionName: params.registryCollectionName,
+      client: params.client
+    });
+  } else {
+    await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName });
+  }
+
+  const pointId = getDocRegistryPointId(params.docId);
+
   const points = await client.retrieve(params.registryCollectionName, {
-    ids: [params.docId],
+    ids: [pointId],
     with_payload: true,
     with_vector: false
   });
@@ -201,6 +234,15 @@ export const listDocRegistryEntries = async (params: {
   if (params.pageSize <= 0) throw new Error("pageSize must be > 0");
 
   const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryClient);
+
+  if (params.client) {
+    await ensureDocRegistryCollection({
+      registryCollectionName: params.registryCollectionName,
+      client: params.client
+    });
+  } else {
+    await ensureDocRegistryCollection({ registryCollectionName: params.registryCollectionName });
+  }
 
   const entryByDocId = new Map<string, DocRegistryEntry>();
   let scannedPoints = 0;
@@ -249,5 +291,6 @@ export const deleteDocRegistryEntry = async (params: {
   client?: QdrantDocRegistryDeleteClient;
 }): Promise<void> => {
   const client = params.client ?? (qdrantClient as unknown as QdrantDocRegistryDeleteClient);
-  await client.delete(params.registryCollectionName, { wait: true, points: [params.docId] });
+  const pointId = getDocRegistryPointId(params.docId);
+  await client.delete(params.registryCollectionName, { wait: true, points: [pointId] });
 };
