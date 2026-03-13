@@ -8,6 +8,37 @@ const qdrantClientParams = appConfig.QDRANT_API_KEY
 
 export const qdrantClient = new QdrantClient(qdrantClientParams);
 
+const parseCollectionVectorSize = (collectionInfo: unknown) => {
+  const root = collectionInfo as Record<string, unknown> | null;
+  const result =
+    root && typeof root["result"] === "object" && root["result"] !== null
+      ? (root["result"] as Record<string, unknown>)
+      : root;
+  const config =
+    result && typeof result["config"] === "object" && result["config"] !== null
+      ? (result["config"] as Record<string, unknown>)
+      : null;
+  const params =
+    config && typeof config["params"] === "object" && config["params"] !== null
+      ? (config["params"] as Record<string, unknown>)
+      : null;
+  const vectors = params ? params["vectors"] : undefined;
+
+  if (!vectors || typeof vectors !== "object") return null;
+
+  const vectorsRecord = vectors as Record<string, unknown>;
+  const directSize = vectorsRecord["size"];
+  if (typeof directSize === "number") return directSize;
+
+  for (const value of Object.values(vectorsRecord)) {
+    if (!value || typeof value !== "object") continue;
+    const size = (value as Record<string, unknown>)["size"];
+    if (typeof size === "number") return size;
+  }
+
+  return null;
+};
+
 export const ensureQdrantCollection = async (params: {
   collectionName: string;
   vectorSize: number;
@@ -25,7 +56,7 @@ export const ensureQdrantCollection = async (params: {
   }
 
   const info = await qdrantClient.getCollection(collectionName);
-  const existingSize = info.config.params.vectors?.size;
+  const existingSize = parseCollectionVectorSize(info);
 
   if (typeof existingSize !== "number") {
     throw new Error(`Qdrant collection ${collectionName} missing vectors config`);
