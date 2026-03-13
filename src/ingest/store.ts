@@ -1,5 +1,6 @@
 import { appConfig } from "../config/env.js";
 import { ensureQdrantCollection, qdrantClient } from "../core/qdrant.js";
+import { getQdrantPointId } from "../core/qdrantPointId.js";
 
 import type { EmbeddedChunk } from "./embed.js";
 
@@ -39,7 +40,7 @@ export const upsertEmbeddedChunks = async (params: {
     await qdrantClient.upsert(collectionName, {
       wait: true,
       points: batch.map((chunk) => ({
-        id: chunk.chunkId,
+        id: getQdrantPointId("chunk", chunk.chunkId),
         vector: chunk.vector,
         payload: {
           doc_id: chunk.docId,
