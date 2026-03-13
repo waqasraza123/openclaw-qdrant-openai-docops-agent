@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { PDFParse } from "pdf-parse";
 
 const normalizeExtractedText = (text: string) =>
   text
@@ -7,33 +8,21 @@ const normalizeExtractedText = (text: string) =>
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-type PdfParseResult = {
-  text?: string;
-  numpages?: number;
-};
-
-type PdfParseFunction = (data: Buffer) => Promise<PdfParseResult>;
-
-const loadPdfParseFunction = async (): Promise<PdfParseFunction> => {
-  const moduleValue = await import("pdf-parse");
-  const candidate = (moduleValue as unknown as { default?: unknown }).default ?? moduleValue;
-  if (typeof candidate !== "function") {
-    throw new Error("pdf-parse module did not export a callable function");
-  }
-  return candidate as PdfParseFunction;
-};
-
 export const extractPdfText = async (pdfPath: string) => {
   const buffer = await fs.readFile(pdfPath);
-  const pdfParseFunction = await loadPdfParseFunction();
-  const parsed = await pdfParseFunction(buffer);
+  const parser = new PDFParse({ data: buffer });
 
-  const text = normalizeExtractedText(parsed.text ?? "");
-  const pageCount = typeof parsed.numpages === "number" ? parsed.numpages : null;
+  try {
+    const parsed = await parser.getText();
+    const text = normalizeExtractedText(parsed.text ?? "");
+    const pageCount = typeof parsed.total === "number" ? parsed.total : null;
 
-  if (text.length === 0) {
-    throw new Error("PDF extraction resulted in empty text");
+    if (text.length === 0) {
+      throw new Error("PDF extraction resulted in empty text");
+    }
+
+    return { text, pageCount };
+  } finally {
+    await parser.destroy();
   }
-
-  return { text, pageCount };
 };
